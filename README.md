@@ -5,7 +5,11 @@ This assumes you've exported your data and they sent you something like my_data_
 
 change that folder name to "data from snapchat" and this script should be at the same level as the folder you downloaded and renamed.
 
-You can figure it out from there right? ;] see below ai slop for futher usage.
+You can figure it out from there right? 
+
+;] 
+
+see below ai slop for futher usage.
 
 end human.
 
