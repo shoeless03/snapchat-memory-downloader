@@ -4,8 +4,6 @@
 
 This project downloads and organizes Snapchat memories from the HTML export files provided by Snapchat's "Download My Data" feature.
 
-**Total Memories Found:** 1,941
-
 ## Problem Statement
 
 When you request your data from Snapchat, they provide:
@@ -286,9 +284,10 @@ python download_snapchat_memories.py --verify
 
 ## Statistics
 
-- **Total Memories:** 1,941
-- **Date Range:** Approximately 2025 (based on sample data)
-- **Media Types:** Images and Videos
+The script dynamically counts and reports:
+- **Total Memories:** Parsed from your HTML export file
+- **Date Range:** Based on your Snapchat usage history
+- **Media Types:** Images and Videos with optional overlay files
 - **Includes:** GPS location data for each memory
 
 ## Implementation Details

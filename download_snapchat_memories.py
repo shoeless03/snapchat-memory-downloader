@@ -15,7 +15,7 @@ import requests
 from pathlib import Path
 from datetime import datetime
 from html.parser import HTMLParser
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional
 from urllib.parse import urlparse, parse_qs
 
 
@@ -75,12 +75,17 @@ class MemoriesParser(HTMLParser):
 class SnapchatDownloader:
     """Download and organize Snapchat memories."""
 
-    def __init__(self, html_file: str, output_dir: str = "memories", progress_file: str = "download_progress.json"):
+    def __init__(self, html_file: str, output_dir: str = "memories", progress_file: str = "download_progress.json", add_gps: bool = False):
         self.html_file = html_file
         self.output_dir = Path(output_dir)
         self.progress_file = progress_file
+        self.add_gps = add_gps
         self.progress = self._load_progress()
         self.session = requests.Session()
+
+        # Check for ExifTool if GPS is requested
+        if self.add_gps:
+            self._check_exiftool_availability()
 
         # Create output directories
         self.output_dir.mkdir(exist_ok=True)
@@ -99,6 +104,56 @@ class SnapchatDownloader:
         """Save download progress to JSON file."""
         with open(self.progress_file, 'w') as f:
             json.dump(self.progress, f, indent=2)
+
+    def _check_exiftool_availability(self):
+        """Check if ExifTool is available and prompt user if not."""
+        import shutil
+        import sys
+        import platform
+        from pathlib import Path as PathlibPath
+
+        # Check for exiftool in local directory first, then PATH
+        script_dir = PathlibPath(__file__).parent
+
+        # Check different possible locations based on platform
+        if platform.system() == 'Windows':
+            exiftool_local = script_dir / 'exiftool-13.39_64' / 'exiftool(-k).exe'
+        else:
+            exiftool_local = script_dir / 'exiftool'
+
+        exiftool_available = exiftool_local.exists() or shutil.which('exiftool') is not None
+
+        if not exiftool_available:
+            print("\n" + "="*70)
+            print("WARNING: ExifTool not found!")
+            print("="*70)
+            print("\nYou've enabled GPS metadata with --add-gps, but ExifTool is not installed.")
+            print("\nExifTool is required to embed GPS coordinates in your media files.")
+            print("\nInstallation instructions:")
+            print("  - Windows: Download from https://exiftool.org/ and extract to this folder")
+            print("  - Linux:   sudo apt install libimage-exiftool-perl")
+            print("  - macOS:   brew install exiftool")
+            print("\nSee README.md for detailed setup instructions.")
+            print("\nWhat would you like to do?")
+            print("  1. Quit and install ExifTool (recommended)")
+            print("  2. Continue without GPS metadata")
+            print("="*70)
+
+            while True:
+                try:
+                    choice = input("\nEnter your choice (1 or 2): ").strip()
+                    if choice == '1':
+                        print("\nExiting. Please install ExifTool and run the script again.")
+                        sys.exit(0)
+                    elif choice == '2':
+                        print("\nContinuing without GPS metadata...")
+                        self.add_gps = False  # Disable GPS for this session
+                        break
+                    else:
+                        print("Invalid choice. Please enter 1 or 2.")
+                except (KeyboardInterrupt, EOFError):
+                    print("\n\nExiting...")
+                    sys.exit(0)
 
     def parse_html(self) -> List[Dict]:
         """Parse the HTML file and extract all memories."""
@@ -289,6 +344,9 @@ class SnapchatDownloader:
         # Set file timestamps to match the Snapchat date
         self._set_file_timestamps(output_path, memory)
 
+        # Add GPS metadata if available
+        self._add_gps_metadata(output_path, memory)
+
     def _extract_and_save_zip(self, temp_zip: Path, memory: Dict, sid: str):
         """Extract and save files from a ZIP archive."""
         with zipfile.ZipFile(temp_zip, 'r') as zip_ref:
@@ -319,6 +377,9 @@ class SnapchatDownloader:
 
                 # Set file timestamps to match the Snapchat date
                 self._set_file_timestamps(output_path, memory)
+
+                # Add GPS metadata if available
+                self._add_gps_metadata(output_path, memory)
 
     def _set_file_timestamps(self, file_path: Path, memory: Dict):
         """Set file creation and modification times to match Snapchat date."""
@@ -380,6 +441,82 @@ class SnapchatDownloader:
             except Exception:
                 # If setting creation time fails, that's okay
                 pass
+
+    def _parse_location(self, memory: Dict) -> Optional[Tuple[float, float]]:
+        """Parse latitude and longitude from location string."""
+        if 'location' not in memory or not memory['location']:
+            return None
+
+        # Format: "Latitude, Longitude: 42.438072, -82.91975"
+        location = memory['location']
+        try:
+            if 'Latitude, Longitude:' in location:
+                coords = location.split('Latitude, Longitude:')[1].strip()
+                lat_str, lon_str = coords.split(',')
+                lat = float(lat_str.strip())
+                lon = float(lon_str.strip())
+                return (lat, lon)
+        except (ValueError, IndexError):
+            return None
+
+        return None
+
+    def _add_gps_metadata(self, file_path: Path, memory: Dict):
+        """Add GPS coordinates to file metadata using exiftool."""
+        # Skip if GPS feature is not enabled
+        if not self.add_gps:
+            return
+
+        coords = self._parse_location(memory)
+        if not coords:
+            return
+
+        lat, lon = coords
+        file_ext = file_path.suffix.lower()
+
+        # Only process media files (skip overlays which are PNGs without location context)
+        if file_ext not in ['.jpg', '.jpeg', '.mp4', '.mov', '.avi']:
+            return
+
+        # Use exiftool for all media types (images and videos)
+        try:
+            import subprocess
+            import shutil
+            from pathlib import Path as PathlibPath
+
+            # Check for exiftool in local directory first, then PATH
+            exiftool_local = PathlibPath(__file__).parent / 'exiftool-13.39_64' / 'exiftool(-k).exe'
+            if exiftool_local.exists():
+                exiftool_cmd = str(exiftool_local)
+            elif shutil.which('exiftool') is not None:
+                exiftool_cmd = 'exiftool'
+            else:
+                # exiftool not found
+                return
+
+            # Format GPS coordinates for exiftool
+            # exiftool accepts decimal degrees directly
+            lat_ref = 'N' if lat >= 0 else 'S'
+            lon_ref = 'E' if lon >= 0 else 'W'
+
+            # Run exiftool to add GPS metadata
+            result = subprocess.run([
+                exiftool_cmd,
+                f'-GPSLatitude={abs(lat)}',
+                f'-GPSLatitudeRef={lat_ref}',
+                f'-GPSLongitude={abs(lon)}',
+                f'-GPSLongitudeRef={lon_ref}',
+                '-overwrite_original',  # Don't create backup files
+                '-q',  # Quiet mode
+                str(file_path)
+            ], capture_output=True, timeout=30, text=True)
+
+            # Note: We don't raise errors here - if GPS tagging fails, that's okay
+            # The file will still be downloaded/processed, just without GPS data
+
+        except (FileNotFoundError, subprocess.TimeoutExpired, Exception):
+            # exiftool not available or failed, skip GPS metadata
+            pass
 
     def _record_failure(self, sid: str, memory: Dict, error_msg: str, exception: Exception = None) -> Tuple[bool, str]:
         """Record a failed download attempt."""
@@ -498,13 +635,14 @@ class SnapchatDownloader:
 
                 # Skip if already named correctly
                 if old_file.name == new_filename:
-                    # Just update timestamps
+                    # Just update timestamps and GPS
                     try:
                         self._set_file_timestamps(old_file, memory)
-                        print(f"  Updated timestamps: {old_file.name}")
+                        self._add_gps_metadata(old_file, memory)
+                        print(f"  Updated metadata: {old_file.name}")
                         updated_count += 1
                     except Exception as e:
-                        print(f"  Error updating timestamps for {old_file.name}: {e}")
+                        print(f"  Error updating metadata for {old_file.name}: {e}")
                     continue
 
                 # Rename file
@@ -512,8 +650,9 @@ class SnapchatDownloader:
                     old_file.rename(new_path)
                     print(f"  Renamed: {old_file.name} -> {new_filename}")
 
-                    # Update timestamps
+                    # Update timestamps and GPS
                     self._set_file_timestamps(new_path, memory)
+                    self._add_gps_metadata(new_path, memory)
                     updated_count += 1
                 except Exception as e:
                     print(f"  Error renaming {old_file.name}: {e}")
@@ -565,10 +704,12 @@ def main():
                         help='Verify downloads without downloading')
     parser.add_argument('--update-filenames', action='store_true',
                         help='Update existing files to new naming format and set timestamps')
+    parser.add_argument('--add-gps', action='store_true',
+                        help='Add GPS coordinates to file metadata (requires ExifTool)')
 
     args = parser.parse_args()
 
-    downloader = SnapchatDownloader(args.html, args.output)
+    downloader = SnapchatDownloader(args.html, args.output, add_gps=args.add_gps)
 
     if args.update_filenames:
         downloader.update_existing_files()

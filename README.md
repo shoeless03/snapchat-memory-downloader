@@ -23,6 +23,7 @@ This tool automatically downloads all your Snapchat memories (photos and videos)
 - 📁 Organizes files into `images/`, `videos/`, and `overlays/` folders
 - 📅 Human-readable filenames with timestamps (e.g., `2025-10-16_194703_Image_9ce001ca.jpg`)
 - ⏰ Preserves Snapchat creation dates in file metadata
+- 📍 Optional GPS coordinate embedding (requires ExifTool and `--add-gps` flag)
 - 🔄 Resume capability - tracks progress and skips already-downloaded files
 - 🛡️ Rate limit handling with automatic retry and exponential backoff
 - ✅ Verification mode to check download completeness
@@ -34,9 +35,18 @@ This tool automatically downloads all your Snapchat memories (photos and videos)
 - **Python 3.7+** - [Download Python](https://www.python.org/downloads/)
 - **requests library** - Install with: `pip install requests`
 
-### Optional (for setting file creation timestamps)
+### Optional Dependencies
+
+**For setting file creation timestamps:**
 - **pywin32** (Windows only) - Install with: `pip install pywin32`
   - Not needed on Linux or macOS (built-in support)
+
+**For embedding GPS coordinates in files:**
+- **ExifTool** - [Download ExifTool](https://exiftool.org/)
+  - **Windows**: Download from https://exiftool.org/ and add to PATH
+  - **Linux**: `sudo apt install libimage-exiftool-perl` or `sudo dnf install perl-Image-ExifTool`
+  - **macOS**: `brew install exiftool`
+  - **Note**: Without ExifTool, files will still download but won't have GPS metadata embedded
 
 ## Installation
 
@@ -87,6 +97,9 @@ python download_snapchat_memories.py --verify
 
 # Update existing files to new naming format and timestamps
 python download_snapchat_memories.py --update-filenames
+
+# Add GPS coordinates to downloaded files (requires ExifTool)
+python download_snapchat_memories.py --update-filenames --add-gps
 ```
 
 **Available options:**
@@ -95,6 +108,7 @@ python download_snapchat_memories.py --update-filenames
 - `--delay` - Seconds between downloads (default: 2.0, increase if rate limited)
 - `--verify` - Check download status without downloading
 - `--update-filenames` - Rename existing files and update timestamps
+- `--add-gps` - Add GPS coordinates to file metadata (requires ExifTool)
 
 ### Handling Rate Limits
 
