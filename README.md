@@ -1,4 +1,3 @@
-# Snapchat Memories Downloader
 
 I am not a bot but the rest of this is. Created with claude code use at your own risk.
 
