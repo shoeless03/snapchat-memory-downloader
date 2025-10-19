@@ -1,13 +1,28 @@
 # Snapchat Memories Downloader
 
-A Python script to download and organize your Snapchat memories from the HTML export provided by Snapchat's "Download My Data" feature.
+I am not a bot but the rest of this is. Created with claude code use at your own risk.
+
+This assumes you've exported your data and they sent you something like my_data_blah blah folder with html in it.
+
+change that folder name to "data from snapchat" put this script in parent folder:
+
+-download_snapchat_memories.py
+-data from snapchat
+ |
+ --html
+   |
+   --memories_history.html
+
+
+You can figure it out from there right? see below ai slop for futher usage.
+
+end human.
 
 ## Overview
 
 This tool automatically downloads all your Snapchat memories (photos and videos) from the HTML export file, organizing them with human-readable filenames and preserving the original creation timestamps.
 
 **Key Features:**
-- 🎯 Downloads 1,900+ memories automatically
 - 📁 Organizes files into `images/`, `videos/`, and `overlays/` folders
 - 📅 Human-readable filenames with timestamps (e.g., `2025-10-16_194703_Image_9ce001ca.jpg`)
 - ⏰ Preserves Snapchat creation dates in file metadata
