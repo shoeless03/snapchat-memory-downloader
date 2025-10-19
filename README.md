@@ -4,17 +4,9 @@ I am not a bot but the rest of this is. Created with claude code use at your own
 
 This assumes you've exported your data and they sent you something like my_data_blah blah folder with html in it.
 
-change that folder name to "data from snapchat" put this script in parent folder:
+change that folder name to "data from snapchat" and this script should be at the same level as the folder you downloaded and renamed.
 
--download_snapchat_memories.py
--data from snapchat
- |
- --html
-   |
-   --memories_history.html
-
-
-You can figure it out from there right? see below ai slop for futher usage.
+You can figure it out from there right? ;] see below ai slop for futher usage.
 
 end human.
 
