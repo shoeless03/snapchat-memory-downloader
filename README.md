@@ -23,10 +23,11 @@ This tool automatically downloads all your Snapchat memories (photos and videos)
 - 📁 Organizes files into `images/`, `videos/`, and `overlays/` folders
 - 📅 Human-readable filenames with timestamps (e.g., `2025-10-16_194703_Image_9ce001ca.jpg`)
 - ⏰ Preserves Snapchat creation dates in file metadata
-- 📍 Optional GPS coordinate embedding (requires ExifTool and `--add-gps` flag)
+- 📍 Automatic GPS coordinate embedding when ExifTool is installed
 - 🔄 Resume capability - tracks progress and skips already-downloaded files
 - 🛡️ Rate limit handling with automatic retry and exponential backoff
 - ✅ Verification mode to check download completeness
+- 🔍 Smart dependency detection with user prompts
 - 🖥️ Cross-platform support (Linux, macOS, Windows)
 
 ## Prerequisites
@@ -37,16 +38,25 @@ This tool automatically downloads all your Snapchat memories (photos and videos)
 
 ### Optional Dependencies
 
-**For setting file creation timestamps:**
-- **pywin32** (Windows only) - Install with: `pip install pywin32`
-  - Not needed on Linux or macOS (built-in support)
+The script will automatically detect these at startup and prompt you if they're missing:
 
 **For embedding GPS coordinates in files:**
 - **ExifTool** - [Download ExifTool](https://exiftool.org/)
-  - **Windows**: Download from https://exiftool.org/ and add to PATH
+  - **Windows**: Download from https://exiftool.org/ and extract to the script folder as `exiftool-13.39_64/`
   - **Linux**: `sudo apt install libimage-exiftool-perl` or `sudo dnf install perl-Image-ExifTool`
   - **macOS**: `brew install exiftool`
-  - **Note**: Without ExifTool, files will still download but won't have GPS metadata embedded
+  - If detected, GPS coordinates will be automatically embedded in your photos and videos
+
+**For setting file creation timestamps (Windows only):**
+- **pywin32** - Install with: `pip install pywin32`
+  - Not needed on Linux or macOS (built-in support)
+  - Without it, modification times will still be set correctly on Windows
+
+> **Note:** You can run the script without these dependencies! If missing, you'll be prompted with:
+> - Option to continue without the optional features
+> - Option to quit and install them first
+>
+> You can also install them later and re-run the script to automatically update your existing files.
 
 ## Installation
 
@@ -72,7 +82,7 @@ This tool automatically downloads all your Snapchat memories (photos and videos)
 
 ## Usage
 
-### Basic Download
+### First Run
 
 Place the Snapchat HTML file at `data from snapchat/html/memories_history.html`, then run:
 
@@ -80,11 +90,45 @@ Place the Snapchat HTML file at `data from snapchat/html/memories_history.html`,
 python download_snapchat_memories.py
 ```
 
-The script will:
-- Parse the HTML to find all memories
-- Download each memory with a 2-second delay between requests
-- Save files to the `memories/` folder with organized subfolders
-- Track progress in `download_progress.json`
+**What happens on first run:**
+1. The script checks for optional dependencies (ExifTool, pywin32)
+2. If any are missing, you'll see a prompt:
+   ```
+   ======================================================================
+   OPTIONAL DEPENDENCIES
+   ======================================================================
+
+   The following optional features are not available:
+
+     • ExifTool: Required for GPS metadata embedding
+
+   What would you like to do?
+     1. Continue without these features
+     2. Quit to install dependencies (recommended)
+   ======================================================================
+   ```
+3. Choose option 1 to proceed or option 2 to install dependencies first
+4. The script downloads all memories with progress tracking
+
+**The script automatically:**
+- Parses the HTML to find all memories
+- Downloads each memory with a 2-second delay between requests
+- Embeds GPS coordinates (if ExifTool is available)
+- Sets file creation timestamps (if pywin32 is available on Windows)
+- Saves files to the `memories/` folder with organized subfolders
+- Tracks progress in `download_progress.json`
+
+### Re-running After Installing Dependencies
+
+If you initially ran without ExifTool or pywin32, you can install them later:
+
+```bash
+# Install ExifTool (see Prerequisites section for platform-specific instructions)
+# Then re-run the script:
+python download_snapchat_memories.py
+```
+
+The script will automatically update your existing files with GPS metadata and proper timestamps!
 
 ### Command-Line Options
 
@@ -94,12 +138,6 @@ python download_snapchat_memories.py --html "path/to/memories_history.html" --ou
 
 # Verify what's been downloaded
 python download_snapchat_memories.py --verify
-
-# Update existing files to new naming format and timestamps
-python download_snapchat_memories.py --update-filenames
-
-# Add GPS coordinates to downloaded files (requires ExifTool)
-python download_snapchat_memories.py --update-filenames --add-gps
 ```
 
 **Available options:**
@@ -107,8 +145,6 @@ python download_snapchat_memories.py --update-filenames --add-gps
 - `--output` - Output directory (default: `memories`)
 - `--delay` - Seconds between downloads (default: 2.0, increase if rate limited)
 - `--verify` - Check download status without downloading
-- `--update-filenames` - Rename existing files and update timestamps
-- `--add-gps` - Add GPS coordinates to file metadata (requires ExifTool)
 
 ### Handling Rate Limits
 
@@ -142,23 +178,27 @@ memories/
 
 The script tracks progress in `download_progress.json`. If interrupted:
 - Re-run the script - it will skip already-downloaded files
+- Already-downloaded files will have their metadata updated if new dependencies are installed
 - Failed downloads are tracked and automatically retried (up to 5 attempts)
 - Use `--verify` to check what's missing
 
 ## Platform Support
 
-| Platform | Modification Time | Creation Time |
-|----------|------------------|---------------|
-| Linux    | ✅ Always set     | ✅ Built-in   |
-| macOS    | ✅ Always set     | ✅ Built-in   |
-| Windows  | ✅ Always set     | ⚠️ Requires pywin32 |
+| Feature | Linux | macOS | Windows |
+|---------|-------|-------|---------|
+| Modification Time | ✅ Always | ✅ Always | ✅ Always |
+| Creation Time | ✅ Built-in | ✅ Built-in | ⚠️ Requires pywin32 |
+| GPS Metadata | ✅ With ExifTool | ✅ With ExifTool | ✅ With ExifTool |
 
 Files are sorted chronologically by Snapchat creation date, not download date.
+
+**Dependency Detection:** The script automatically checks for ExifTool and pywin32 at startup and will prompt you if they're missing.
 
 ## Troubleshooting
 
 ### Rate Limiting
 **Error:** `File is not a zip file` or `HTTP 429`
+
 **Solution:** Increase delay between downloads:
 ```bash
 python download_snapchat_memories.py --delay 5.0
@@ -166,10 +206,16 @@ python download_snapchat_memories.py --delay 5.0
 
 ### Missing Dependencies
 **Error:** `ModuleNotFoundError: No module named 'requests'`
+
 **Solution:** Install requests:
 ```bash
 pip install requests
 ```
+
+### Optional Dependencies
+If you skipped installing ExifTool or pywin32 initially:
+1. Install the missing dependency (see Prerequisites section)
+2. Re-run the script - it will automatically update your existing files!
 
 ### Download Failures
 Check `download_progress.json` for error details. Re-run the script to retry failed downloads.
