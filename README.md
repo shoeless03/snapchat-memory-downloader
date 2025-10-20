@@ -1,5 +1,5 @@
 
-I am not a bot but the rest of this is. Created with claude code use at your own risk.
+I am not a bot but the rest of this is. Created with Claude Code - use at your own risk.
 
 This assumes you've exported your data and they sent you something like my_data_blah blah folder with html in it.
 
