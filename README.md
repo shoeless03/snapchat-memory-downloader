@@ -12,7 +12,11 @@ You can figure it out from there right?
 see below ai slop for futher usage.
 
 works on my machine.
- 
+
+extra:
+ - I personally don't care about the overlay data (it's like black image with the text you add over images/videos) so they go to their own folder.  
+
+
 End human.
 
 ## Overview
