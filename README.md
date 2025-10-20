@@ -13,7 +13,7 @@ see below ai slop for futher usage.
 
 works on my machine.
  
-end human.
+End human.
 
 ## Overview
 
