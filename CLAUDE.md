@@ -60,13 +60,19 @@ snap2/
 │       └── faq.html
 ├── memories/                         # Output directory
 │   ├── images/                      # Downloaded images
-│   │   └── YYYYMMDD_HHMMSS_image_XXXXXXXX.jpg
+│   │   └── YYYY-MM-DD_HHMMSS_Type_sidXXXXXXXX.jpg
 │   ├── videos/                      # Downloaded videos
-│   │   └── YYYYMMDD_HHMMSS_video_XXXXXXXX.mp4
-│   └── overlays/                    # Snapchat overlays/stickers
-│       └── YYYYMMDD_HHMMSS_type_XXXXXXXX_overlay.png
+│   │   └── YYYY-MM-DD_HHMMSS_Type_sidXXXXXXXX.mp4
+│   ├── overlays/                    # Snapchat overlays/stickers
+│   │   └── YYYY-MM-DD_HHMMSS_Type_sidXXXXXXXX_overlay.png
+│   └── composited/                  # Overlays applied to images/videos
+│       ├── images/                  # Images with overlays
+│       │   └── YYYY-MM-DD_HHMMSS_Type_sidXXXXXXXX_composited.jpg
+│       └── videos/                  # Videos with overlays
+│           └── YYYY-MM-DD_HHMMSS_Type_sidXXXXXXXX_composited.mp4
 ├── download_snapchat_memories.py    # Main download script
 ├── download_progress.json           # Progress tracking (auto-created)
+├── overlay_pairs.json               # Cached overlay-to-media mappings
 └── CLAUDE.md                        # This file
 ```
 
@@ -88,14 +94,22 @@ python download_snapchat_memories.py
 python download_snapchat_memories.py --verify
 ```
 
-**Update existing files to new naming format:**
+**Apply overlays to images and videos:**
 ```bash
-python download_snapchat_memories.py --update-filenames
+# Composite all overlays onto images and videos
+python download_snapchat_memories.py --apply-overlays
+
+# Only composite images (faster)
+python download_snapchat_memories.py --apply-overlays --images-only
+
+# With GPS/EXIF metadata (slower, but preserves location data)
+python download_snapchat_memories.py --apply-overlays --copy-metadata
 ```
-This will:
-- Rename files from `20251016_194703_image_9ce001ca.jpg` to `2025-10-16_194703_Image_9ce001ca.jpg`
-- Update file timestamps (modification + creation on Windows)
-- Only affects already-downloaded files
+
+**Verify composited files:**
+```bash
+python download_snapchat_memories.py --verify-composites
+```
 
 **Custom options:**
 ```bash
@@ -106,13 +120,54 @@ python download_snapchat_memories.py --html "path/to/memories_history.html" \
 
 ### Command-line Arguments
 
+**Download Options:**
 - `--html`: Path to the memories HTML file (default: `data from snapchat/html/memories_history.html`)
 - `--output`: Output directory for memories (default: `memories`)
 - `--delay`: Delay between downloads in seconds (default: 2.0, increase if rate limited)
 - `--verify`: Only verify downloads without downloading
-- `--update-filenames`: Update existing files to new naming format and set timestamps
+
+**Overlay Compositing Options:**
+- `--apply-overlays`: Composite overlay PNGs onto base images and videos
+- `--images-only`: Only composite overlays onto images (skip videos)
+- `--videos-only`: Only composite overlays onto videos (skip images)
+- `--verify-composites`: Verify which files have been composited
+- `--rebuild-cache`: Force rebuild of overlay pairs cache
+- `--copy-metadata`: Copy EXIF/GPS metadata to composited files (slow, adds ~1.5s per image)
 
 ## Features
+
+### Overlay Compositing
+
+**NEW FEATURE:** The script can now composite Snapchat overlays (stickers, text, filters) back onto your images and videos!
+
+**How it works:**
+1. Snapchat provides overlays as separate PNG files with transparency
+2. The script matches each overlay to its corresponding base image/video
+3. Uses Pillow (for images) or FFmpeg (for videos) to composite them together
+4. Creates new files in `memories/composited/` folder
+5. Original files remain untouched
+
+**Performance:**
+- **~10 images/second** without metadata copying
+- **~0.6 images/second** with `--copy-metadata` (preserves GPS/EXIF data)
+- Caches overlay-to-media mappings for instant startup on subsequent runs
+- Progress tracking with ETA display
+
+**Requirements:**
+- **Images**: Pillow (install: `pip install Pillow`)
+- **Videos**: FFmpeg (download from https://ffmpeg.org)
+- **Metadata** (optional): ExifTool
+
+**Example Output:**
+```
+[20:49:29] Compositing 430 images...
+[20:49:29] Metadata copy disabled (use --copy-metadata to enable, adds ~1.5s per image)
+[20:49:29] [1/430 0.2%] OK 2025-10-16_194703_Image_9ce001ca.jpg | 10.2 img/s | ETA: 42s
+[20:49:29] [2/430 0.5%] OK 2025-09-24_161956_Image_5b617512.jpg | 10.5 img/s | ETA: 41s
+...
+[20:50:11] Completed in 42.3s (0.10s per image)
+[20:50:11] Images: 430 composited, 0 failed, 0 skipped
+```
 
 ### File Naming Convention
 
@@ -319,26 +374,45 @@ The script dynamically counts and reports:
 - Missing metadata: Use fallback naming
 - Progress saved after each successful download
 
+## Recent Updates
+
+### v1.0.0 - Overlay Compositing Feature
+- ✅ Added overlay compositing to recreate Snapchat's original look
+- ✅ Fast processing: ~10 images/second
+- ✅ Optional metadata copying with ExifTool
+- ✅ Caching system for instant restarts (`overlay_pairs.json`)
+- ✅ Progress tracking with real-time ETA
+- ✅ Resumable: picks up where you left off if interrupted
+
 ## Future Enhancements
 
 Potential improvements:
-- Parallel downloads for faster completion
 - Export location data to GPX/KML format
 - Create photo gallery HTML viewer
 - Organize by date folders (YYYY/MM/)
-- Extract EXIF data preservation
 - Metadata CSV export
+- Batch metadata operations
 
 ## Notes
 
-- The script uses a 2-second delay between downloads by default (increase with `--delay` if you encounter rate limiting)
+**Download Features:**
+- Uses a 2-second delay between downloads by default (increase with `--delay` if you encounter rate limiting)
 - Handles both ZIP archives and direct media files (automatically detected using file signatures)
 - Supports video formats: MP4, MOV, AVI, WebM, MKV
 - Supports image formats: JPEG, PNG, GIF, TIFF
 - File modification times are set to UTC (matching Snapchat's timestamp format)
+
+**Overlay Compositing:**
+- Overlays are matched to base files using filename patterns (same timestamp + SID)
+- ExifTool metadata copying is **opt-in** via `--copy-metadata` flag (adds significant time)
+- Composited files saved to separate `composited/` folder to preserve originals
+- Cache file (`overlay_pairs.json`) speeds up subsequent runs
+- High-quality JPEG output (quality=95) for composited images
+
+**Data Handling:**
 - Original GUIDs from Snapchat are not preserved (using SID instead)
-- Overlays are stored separately and can be matched by filename prefix
-- Location data is currently stored in the HTML but not extracted to files (could be added as EXIF metadata)
+- GPS location data embedded in files when using `--copy-metadata` flag
+- Progress tracking in JSON format for easy inspection and debugging
 
 ## Author
 

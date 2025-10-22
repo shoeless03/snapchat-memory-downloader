@@ -46,6 +46,18 @@ def main():
                         help='Delay between downloads in seconds (default: 2.0, increase if rate limited)')
     parser.add_argument('--verify', action='store_true',
                         help='Verify downloads without downloading')
+    parser.add_argument('--apply-overlays', action='store_true',
+                        help='Composite overlay PNGs onto base images and videos')
+    parser.add_argument('--images-only', action='store_true',
+                        help='Only composite overlays onto images (skip videos)')
+    parser.add_argument('--videos-only', action='store_true',
+                        help='Only composite overlays onto videos (skip images)')
+    parser.add_argument('--verify-composites', action='store_true',
+                        help='Verify which files have been composited')
+    parser.add_argument('--rebuild-cache', action='store_true',
+                        help='Force rebuild of overlay pairs cache')
+    parser.add_argument('--copy-metadata', action='store_true',
+                        help='Copy EXIF/GPS metadata to composited files (slow, adds ~1.5s per image)')
 
     args = parser.parse_args()
 
@@ -54,6 +66,38 @@ def main():
 
     # Create downloader instance
     downloader = SnapchatDownloader(args.html, args.output)
+
+    # Run in composite overlay mode
+    if args.apply_overlays:
+        print("Compositing overlays onto base media files...")
+        downloader.composite_all_overlays(
+            images_only=args.images_only,
+            videos_only=args.videos_only,
+            rebuild_cache=args.rebuild_cache,
+            copy_metadata=args.copy_metadata
+        )
+        return
+
+    # Run in composite verification mode
+    if args.verify_composites:
+        print("Verifying composited files...")
+        results = downloader.verify_composites()
+
+        print(f"\nComposite Verification Results:")
+        print(f"{'='*60}")
+        print(f"Total overlay pairs: {results['total_pairs']}")
+        print(f"Composited images: {results['composited_images']}")
+        print(f"Composited videos: {results['composited_videos']}")
+        print(f"Missing composites: {results['missing']}")
+        print(f"{'='*60}\n")
+
+        if results['missing_list']:
+            print("Missing composites:")
+            for item in results['missing_list'][:10]:
+                print(f"  - {item}")
+            if len(results['missing_list']) > 10:
+                print(f"  ... and {len(results['missing_list']) - 10} more")
+        return
 
     # Run in verification mode or download mode
     if args.verify:
@@ -115,6 +159,22 @@ def check_dependencies():
         except ImportError:
             has_pywin32 = False
 
+    # Check for Pillow (for image compositing)
+    has_pillow = True
+    has_pillow_simd = False
+    try:
+        from PIL import Image
+        # Check if it's pillow-simd
+        try:
+            has_pillow_simd = 'post' in Image.__version__ or 'simd' in Image.PILLOW_VERSION.lower()
+        except:
+            pass
+    except ImportError:
+        has_pillow = False
+
+    # Check for FFmpeg (for video compositing)
+    has_ffmpeg = shutil.which('ffmpeg') is not None
+
     # Display dependency status
     missing_features = []
 
@@ -123,6 +183,12 @@ def check_dependencies():
 
     if not has_pywin32 and platform.system() == 'Windows':
         missing_features.append(("pywin32", "setting file creation dates on Windows"))
+
+    if not has_pillow:
+        missing_features.append(("Pillow", "compositing overlays onto images"))
+
+    if not has_ffmpeg:
+        missing_features.append(("FFmpeg", "compositing overlays onto videos"))
 
     if missing_features:
         print("\n" + "="*70)
@@ -145,6 +211,18 @@ def check_dependencies():
             print("\n  pywin32:")
             print("    - Windows: pip install pywin32")
 
+        if not has_pillow:
+            print("\n  Pillow:")
+            print("    - All platforms: pip install pillow-simd")
+            print("      (pillow-simd is 5x faster than regular Pillow)")
+
+        if not has_ffmpeg:
+            print("\n  FFmpeg:")
+            print("    - Windows: Download from https://ffmpeg.org/download.html")
+            print("               Add to PATH or place ffmpeg.exe in this folder")
+            print("    - Linux:   sudo apt install ffmpeg")
+            print("    - macOS:   brew install ffmpeg")
+
         print("\nWhat would you like to do?")
         print("  1. Continue without these features")
         print("  2. Quit to install dependencies (recommended)")
@@ -159,8 +237,12 @@ def check_dependencies():
                         print("  - GPS metadata will NOT be added to files")
                     if not has_pywin32 and platform.system() == 'Windows':
                         print("  - File creation dates will NOT be set (modification dates will still work)")
+                    if not has_pillow:
+                        print("  - Image overlays will NOT be composited")
+                    if not has_ffmpeg:
+                        print("  - Video overlays will NOT be composited")
                     print("\nNOTE: You can install these dependencies later and re-run the script")
-                    print("      to add GPS data and update timestamps on your existing files.")
+                    print("      to add GPS data, update timestamps, and composite overlays on your existing files.")
                     print()
                     break
                 elif choice == '2':
@@ -177,6 +259,13 @@ def check_dependencies():
         print("  [OK] ExifTool: GPS metadata will be embedded")
         if platform.system() == 'Windows':
             print("  [OK] pywin32: File creation dates will be set")
+        if has_pillow_simd:
+            print("  [OK] Pillow-SIMD: Image overlays can be composited (5x faster!)")
+        else:
+            print("  [OK] Pillow: Image overlays can be composited")
+            print("  [TIP] For 5x faster compositing, install pillow-simd:")
+            print("        pip uninstall Pillow && pip install pillow-simd")
+        print("  [OK] FFmpeg: Video overlays can be composited")
         print("="*70 + "\n")
 
 
@@ -195,17 +284,20 @@ class SnapchatDownloader:
     # Initialization - Called when instance is created
     # ========================================================================
 
-    def __init__(self, html_file: str, output_dir: str = "memories", progress_file: str = "download_progress.json"):
+    def __init__(self, html_file: str, output_dir: str = "memories", progress_file: str = "download_progress.json", pairs_cache_file: str = "overlay_pairs.json"):
         """Initialize the downloader with configuration and check dependencies."""
         self.html_file = html_file
         self.output_dir = Path(output_dir)
         self.progress_file = progress_file
+        self.pairs_cache_file = pairs_cache_file
         self.progress = self._load_progress()
         self.session = requests.Session()
 
         # Check for optional dependencies and set capabilities
         self.has_exiftool = self._check_exiftool()
         self.has_pywin32 = self._check_pywin32()
+        self.has_pillow = self._check_pillow()
+        self.has_ffmpeg = self._check_ffmpeg()
 
         # GPS metadata will be added automatically if ExifTool is available
         self.add_gps = self.has_exiftool
@@ -215,6 +307,9 @@ class SnapchatDownloader:
         (self.output_dir / "images").mkdir(exist_ok=True)
         (self.output_dir / "videos").mkdir(exist_ok=True)
         (self.output_dir / "overlays").mkdir(exist_ok=True)
+        (self.output_dir / "composited").mkdir(exist_ok=True)
+        (self.output_dir / "composited" / "images").mkdir(exist_ok=True)
+        (self.output_dir / "composited" / "videos").mkdir(exist_ok=True)
 
     def _load_progress(self) -> Dict:
         """Load download progress from JSON file."""
@@ -257,6 +352,19 @@ class SnapchatDownloader:
             return True
         except ImportError:
             return False
+
+    def _check_pillow(self) -> bool:
+        """Check if Pillow is available."""
+        try:
+            from PIL import Image
+            return True
+        except ImportError:
+            return False
+
+    def _check_ffmpeg(self) -> bool:
+        """Check if FFmpeg is available."""
+        import shutil
+        return shutil.which('ffmpeg') is not None
 
     # ========================================================================
     # Main Download Flow - download_all() orchestrates everything
@@ -749,6 +857,419 @@ class SnapchatDownloader:
                 })
 
         return results
+
+    # ========================================================================
+    # Overlay Compositing - Composite overlay PNGs onto base media
+    # ========================================================================
+
+    def find_overlay_pairs(self, use_cache: bool = True) -> List[Dict]:
+        """Find all base media files with matching overlay files.
+
+        Args:
+            use_cache: If True, load from cache if it exists
+
+        Returns list of dicts with:
+        - base_file: Path to base image/video
+        - overlay_file: Path to overlay PNG
+        - media_type: 'image' or 'video'
+        - sid: Session ID
+        """
+        from datetime import datetime
+
+        # Try to load from cache
+        if use_cache and os.path.exists(self.pairs_cache_file):
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] Loading overlay pairs from cache...")
+            try:
+                with open(self.pairs_cache_file, 'r') as f:
+                    cached_data = json.load(f)
+
+                # Convert string paths back to Path objects
+                pairs = []
+                for item in cached_data['pairs']:
+                    pairs.append({
+                        'base_file': Path(item['base_file']),
+                        'overlay_file': Path(item['overlay_file']),
+                        'media_type': item['media_type'],
+                        'sid': item['sid']
+                    })
+
+                print(f"[{datetime.now().strftime('%H:%M:%S')}] Loaded {len(pairs)} pairs from cache (created {cached_data['created']})")
+                return pairs
+            except Exception as e:
+                print(f"[{datetime.now().strftime('%H:%M:%S')}] Cache load failed: {e}, rebuilding...")
+
+        # Build pairs from filesystem
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] Scanning filesystem for overlay pairs...")
+        pairs = []
+
+        # Scan overlay directory
+        overlay_dir = self.output_dir / "overlays"
+        if not overlay_dir.exists():
+            return pairs
+
+        for overlay_file in overlay_dir.glob("*_overlay.png"):
+            # Parse filename: YYYY-MM-DD_HHMMSS_Type_sidXXXXXXXX_overlay.png
+            filename = overlay_file.stem  # Remove .png
+
+            # Remove _overlay suffix
+            if filename.endswith("_overlay"):
+                base_filename = filename[:-8]  # Remove "_overlay"
+            else:
+                continue
+
+            # Determine media type from filename
+            if "_Image_" in base_filename:
+                media_type = "image"
+                base_dir = self.output_dir / "images"
+            elif "_Video_" in base_filename:
+                media_type = "video"
+                base_dir = self.output_dir / "videos"
+            else:
+                continue
+
+            # Find matching base file (could be .jpg, .mp4, etc.)
+            base_files = list(base_dir.glob(f"{base_filename}.*"))
+            if base_files:
+                # Extract SID from filename (last part before extension)
+                parts = base_filename.split('_')
+                sid = parts[-1] if len(parts) >= 4 else ""
+
+                pairs.append({
+                    'base_file': base_files[0],
+                    'overlay_file': overlay_file,
+                    'media_type': media_type,
+                    'sid': sid
+                })
+
+        # Save to cache
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] Found {len(pairs)} pairs, saving to cache...")
+        cache_data = {
+            'created': datetime.now().isoformat(),
+            'count': len(pairs),
+            'pairs': [
+                {
+                    'base_file': str(p['base_file']),
+                    'overlay_file': str(p['overlay_file']),
+                    'media_type': p['media_type'],
+                    'sid': p['sid']
+                }
+                for p in pairs
+            ]
+        }
+
+        try:
+            with open(self.pairs_cache_file, 'w') as f:
+                json.dump(cache_data, f, indent=2)
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] Cache saved to {self.pairs_cache_file}")
+        except Exception as e:
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] Warning: Could not save cache: {e}")
+
+        return pairs
+
+    def composite_all_overlays(self, images_only: bool = False, videos_only: bool = False, rebuild_cache: bool = False, copy_metadata: bool = False):
+        """Composite all overlays onto their base media files.
+
+        Args:
+            images_only: Only process images
+            videos_only: Only process videos
+            rebuild_cache: Force rebuild of overlay pairs cache
+            copy_metadata: Copy EXIF metadata using exiftool (slow, ~1.5s per image)
+        """
+        # Find all pairs (use cache unless rebuild requested)
+        pairs = self.find_overlay_pairs(use_cache=not rebuild_cache)
+
+        if not pairs:
+            print("No overlay pairs found!")
+            return
+
+        # Filter by type if requested
+        if images_only:
+            pairs = [p for p in pairs if p['media_type'] == 'image']
+        elif videos_only:
+            pairs = [p for p in pairs if p['media_type'] == 'video']
+
+        # Separate by type
+        image_pairs = [p for p in pairs if p['media_type'] == 'image']
+        video_pairs = [p for p in pairs if p['media_type'] == 'video']
+
+        print(f"\nFound {len(image_pairs)} images and {len(video_pairs)} videos with overlays")
+
+        # Track composited files in progress
+        if 'composited' not in self.progress:
+            self.progress['composited'] = {'images': {}, 'videos': {}}
+
+        # Composite images
+        if image_pairs:
+            if not self.has_pillow:
+                print("\nSkipping images - Pillow not installed")
+                print("Install with: pip install Pillow")
+            else:
+                # Filter out already composited
+                pending_pairs = [p for p in image_pairs if p['sid'] not in self.progress['composited']['images']]
+                already_done = len(image_pairs) - len(pending_pairs)
+
+                if already_done > 0:
+                    print(f"\nSkipping {already_done} already composited images")
+
+                if pending_pairs:
+                    import time
+                    from datetime import datetime
+
+                    start_time = time.time()
+                    print(f"\n[{datetime.now().strftime('%H:%M:%S')}] Compositing {len(pending_pairs)} images...")
+
+                    if not copy_metadata:
+                        print(f"[{datetime.now().strftime('%H:%M:%S')}] Metadata copy disabled (use --copy-metadata to enable, adds ~1.5s per image)")
+
+                    # Process sequentially
+                    success_count = 0
+                    failed_count = 0
+
+                    for i, pair in enumerate(pending_pairs, 1):
+                        sid = pair['sid']
+                        filename = pair['base_file'].name
+
+                        # Composite the image
+                        success, message = self._composite_image(
+                            pair['base_file'],
+                            pair['overlay_file'],
+                            copy_metadata=copy_metadata
+                        )
+
+                        if success:
+                            self.progress['composited']['images'][sid] = {
+                                'timestamp': datetime.now().isoformat(),
+                                'base_file': str(pair['base_file']),
+                                'overlay_file': str(pair['overlay_file'])
+                            }
+                            success_count += 1
+                            status = "OK"
+                        else:
+                            failed_count += 1
+                            status = "FAIL"
+
+                        # Calculate progress stats
+                        percent = (i / len(pending_pairs)) * 100
+                        elapsed = time.time() - start_time
+                        rate = i / elapsed if elapsed > 0 else 0
+                        eta = (len(pending_pairs) - i) / rate if rate > 0 else 0
+
+                        # Progress indicator with filename and stats
+                        timestamp = datetime.now().strftime('%H:%M:%S')
+                        print(f"[{timestamp}] [{i}/{len(pending_pairs)} {percent:.1f}%] {status} {filename[:40]} | "
+                              f"{rate:.1f} img/s | ETA: {eta:.0f}s", flush=True)
+
+                        # Save progress every 10 images
+                        if i % 10 == 0:
+                            self._save_progress()
+
+                    # Final save
+                    self._save_progress()
+
+                    total_time = time.time() - start_time
+                    print(f"\n[{datetime.now().strftime('%H:%M:%S')}] Completed in {total_time:.1f}s ({total_time/len(pending_pairs):.2f}s per image)")
+                    print(f"[{datetime.now().strftime('%H:%M:%S')}] Images: {success_count} composited, {failed_count} failed, {already_done} skipped")
+                else:
+                    print(f"\nAll {len(image_pairs)} images already composited!")
+
+        # Composite videos
+        if video_pairs:
+            if not self.has_ffmpeg:
+                print("\nSkipping videos - FFmpeg not installed")
+                print("Install FFmpeg: https://ffmpeg.org/download.html")
+            else:
+                print(f"\nCompositing {len(video_pairs)} videos...")
+                success_count = 0
+                for i, pair in enumerate(video_pairs, 1):
+                    sid = pair['sid']
+                    if sid in self.progress['composited']['videos']:
+                        print(f"[{i}/{len(video_pairs)}] Skipping {pair['base_file'].name} (already composited)")
+                        success_count += 1
+                        continue
+
+                    print(f"[{i}/{len(video_pairs)}] Compositing {pair['base_file'].name}...", end=" ")
+                    success, message = self._composite_video(pair['base_file'], pair['overlay_file'])
+                    print(message)
+
+                    if success:
+                        self.progress['composited']['videos'][sid] = {
+                            'timestamp': datetime.now().isoformat(),
+                            'base_file': str(pair['base_file']),
+                            'overlay_file': str(pair['overlay_file'])
+                        }
+                        self._save_progress()
+                        success_count += 1
+
+                print(f"\nVideos: {success_count}/{len(video_pairs)} composited successfully")
+
+    def _composite_image(self, base_file: Path, overlay_file: Path, copy_metadata: bool = False) -> Tuple[bool, str]:
+        """Composite overlay onto image using Pillow."""
+        try:
+            from PIL import Image
+
+            # Open base image and overlay
+            base = Image.open(base_file)
+            overlay = Image.open(overlay_file)
+
+            # Convert to RGBA if needed
+            if base.mode != 'RGBA':
+                base = base.convert('RGBA')
+            if overlay.mode != 'RGBA':
+                overlay = overlay.convert('RGBA')
+
+            # Resize overlay to match base if needed
+            if overlay.size != base.size:
+                overlay = overlay.resize(base.size, Image.Resampling.BILINEAR)
+
+            # Composite overlay onto base
+            composited = Image.alpha_composite(base, overlay)
+
+            # Convert back to RGB for JPEG
+            if composited.mode == 'RGBA':
+                # Create white background
+                background = Image.new('RGB', composited.size, (255, 255, 255))
+                background.paste(composited, mask=composited.split()[3])  # Use alpha channel as mask
+                composited = background
+
+            # Create output filename
+            output_filename = base_file.stem + "_composited" + base_file.suffix
+            output_path = self.output_dir / "composited" / "images" / output_filename
+
+            # Save with high quality
+            if base_file.suffix.lower() in ['.jpg', '.jpeg']:
+                composited.save(output_path, 'JPEG', quality=95, optimize=True)
+            else:
+                composited.save(output_path, quality=95, optimize=True)
+
+            # Copy EXIF data from original if possible
+            try:
+                from PIL import Image as PILImage
+                import piexif
+                # This would require piexif, so we'll use exiftool instead
+            except:
+                pass
+
+            # Set file timestamps to match original
+            stat = os.stat(base_file)
+            os.utime(output_path, (stat.st_atime, stat.st_mtime))
+
+            # Copy metadata using exiftool if requested and available
+            if copy_metadata and self.has_exiftool:
+                self._copy_metadata_with_exiftool(base_file, output_path)
+
+            return True, "Success"
+
+        except Exception as e:
+            return False, f"Error: {str(e)}"
+
+    def _composite_video(self, base_file: Path, overlay_file: Path) -> Tuple[bool, str]:
+        """Composite overlay onto video using FFmpeg."""
+        try:
+            import subprocess
+
+            # Create output filename
+            output_filename = base_file.stem + "_composited" + base_file.suffix
+            output_path = self.output_dir / "composited" / "videos" / output_filename
+
+            # Build FFmpeg command
+            # -i video.mp4 -i overlay.png -filter_complex overlay -codec:a copy output.mp4
+            cmd = [
+                'ffmpeg',
+                '-i', str(base_file),      # Input video
+                '-i', str(overlay_file),   # Input overlay
+                '-filter_complex', 'overlay',  # Overlay filter
+                '-codec:a', 'copy',        # Copy audio without re-encoding
+                '-y',                      # Overwrite output file
+                str(output_path)
+            ]
+
+            # Run FFmpeg
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=300  # 5 minutes max per video
+            )
+
+            if result.returncode != 0:
+                return False, f"FFmpeg error: {result.stderr[:100]}"
+
+            # Set file timestamps to match original
+            stat = os.stat(base_file)
+            os.utime(output_path, (stat.st_atime, stat.st_mtime))
+
+            # Copy metadata using exiftool if available
+            if self.has_exiftool:
+                self._copy_metadata_with_exiftool(base_file, output_path)
+
+            return True, "Success"
+
+        except subprocess.TimeoutExpired:
+            return False, "Timeout (video too long)"
+        except Exception as e:
+            return False, f"Error: {str(e)}"
+
+    def _copy_metadata_with_exiftool(self, source_file: Path, dest_file: Path):
+        """Copy all metadata from source to destination using exiftool."""
+        try:
+            import subprocess
+            import shutil
+            from pathlib import Path as PathlibPath
+
+            # Find exiftool
+            exiftool_local = PathlibPath(__file__).parent / 'exiftool-13.39_64' / 'exiftool(-k).exe'
+            if exiftool_local.exists():
+                exiftool_cmd = str(exiftool_local)
+            elif shutil.which('exiftool') is not None:
+                exiftool_cmd = 'exiftool'
+            else:
+                return
+
+            # Copy all metadata from source to dest
+            result = subprocess.run([
+                exiftool_cmd,
+                '-TagsFromFile', str(source_file),
+                '-all:all',
+                '-overwrite_original',
+                '-q',
+                str(dest_file)
+            ], capture_output=True, timeout=30, text=True)
+
+        except Exception:
+            pass
+
+    def verify_composites(self) -> Dict:
+        """Verify which files have been composited."""
+        pairs = self.find_overlay_pairs()
+
+        # Ensure composited tracking exists
+        if 'composited' not in self.progress:
+            self.progress['composited'] = {'images': {}, 'videos': {}}
+
+        # Separate by type
+        image_pairs = [p for p in pairs if p['media_type'] == 'image']
+        video_pairs = [p for p in pairs if p['media_type'] == 'video']
+
+        # Count composited
+        composited_images = len([p for p in image_pairs if p['sid'] in self.progress['composited']['images']])
+        composited_videos = len([p for p in video_pairs if p['sid'] in self.progress['composited']['videos']])
+
+        # Find missing
+        missing_list = []
+        for pair in image_pairs:
+            if pair['sid'] not in self.progress['composited']['images']:
+                missing_list.append(f"{pair['base_file'].name} (image)")
+        for pair in video_pairs:
+            if pair['sid'] not in self.progress['composited']['videos']:
+                missing_list.append(f"{pair['base_file'].name} (video)")
+
+        return {
+            'total_pairs': len(pairs),
+            'composited_images': composited_images,
+            'composited_videos': composited_videos,
+            'missing': len(missing_list),
+            'missing_list': missing_list
+        }
 
 
 # ============================================================================
