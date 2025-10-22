@@ -2,8 +2,9 @@
 memories/
 data from snapchat/
 
-# Exclude download progress (contains personal data)
+# Exclude download progress and cache files (contains personal data/paths)
 download_progress.json
+overlay_pairs.json
 
 # Python
 __pycache__/
@@ -57,3 +58,8 @@ exiftool*.exe
 exiftool*.zip
 exiftool
 test_*.py
+
+# Incomplete refactoring work (WIP)
+snapchat/
+config/
+data/
