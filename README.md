@@ -21,6 +21,7 @@ This tool automatically downloads all your Snapchat memories (photos and videos)
 
 **Key Features:**
 - 📁 Organizes files into `images/`, `videos/`, and `overlays/` folders
+- 🎨 **Overlay compositing** - Combine Snapchat overlays (stickers, text, filters) back onto your photos and videos
 - 📅 Human-readable filenames with timestamps (e.g., `2025-10-16_194703_Image_9ce001ca.jpg`)
 - ⏰ Preserves Snapchat creation dates in file metadata
 - 📍 Automatic GPS coordinate embedding when ExifTool is installed
@@ -51,6 +52,19 @@ The script will automatically detect these at startup and prompt you if they're 
 - **pywin32** - Install with: `pip install pywin32`
   - Not needed on Linux or macOS (built-in support)
   - Without it, modification times will still be set correctly on Windows
+
+**For compositing overlays onto images:**
+- **Pillow** - Install with: `pip install pillow` or `pip install pillow-simd` (5x faster)
+  - Required to composite Snapchat overlays (stickers, text, filters) onto your images
+  - Creates new files in `memories/composited/images/` folder
+
+**For compositing overlays onto videos:**
+- **FFmpeg** - [Download FFmpeg](https://ffmpeg.org/download.html)
+  - **Windows**: Download from https://ffmpeg.org/download.html and add to PATH
+  - **Linux**: `sudo apt install ffmpeg` or `sudo dnf install ffmpeg`
+  - **macOS**: `brew install ffmpeg`
+  - Required to composite Snapchat overlays onto your videos
+  - Creates new files in `memories/composited/videos/` folder
 
 > **Note:** You can run the script without these dependencies! If missing, you'll be prompted with:
 > - Option to continue without the optional features
@@ -132,7 +146,11 @@ The script will automatically update your existing files with GPS metadata and p
 
 ### Command-Line Options
 
+#### Download Options
 ```bash
+# Basic download
+python download_snapchat_memories.py
+
 # Download with custom settings
 python download_snapchat_memories.py --html "path/to/memories_history.html" --output "my_memories" --delay 3.0
 
@@ -140,11 +158,42 @@ python download_snapchat_memories.py --html "path/to/memories_history.html" --ou
 python download_snapchat_memories.py --verify
 ```
 
-**Available options:**
-- `--html` - Path to memories HTML file (default: `data from snapchat/html/memories_history.html`)
-- `--output` - Output directory (default: `memories`)
-- `--delay` - Seconds between downloads (default: 2.0, increase if rate limited)
+#### Overlay Compositing Options
+```bash
+# Composite all overlays onto images and videos
+python download_snapchat_memories.py --apply-overlays
+
+# Composite only images (faster, skips videos)
+python download_snapchat_memories.py --apply-overlays --images-only
+
+# Composite only videos (skips images)
+python download_snapchat_memories.py --apply-overlays --videos-only
+
+# Composite with GPS/EXIF metadata copying (slower but preserves location data)
+python download_snapchat_memories.py --apply-overlays --copy-metadata
+
+# Force rebuild of overlay pairs cache
+python download_snapchat_memories.py --apply-overlays --rebuild-cache
+
+# Verify which files have been composited
+python download_snapchat_memories.py --verify-composites
+```
+
+#### All Available Options
+
+**Download Options:**
+- `--html PATH` - Path to memories HTML file (default: `data from snapchat/html/memories_history.html`)
+- `--output PATH` - Output directory (default: `memories`)
+- `--delay SECONDS` - Seconds between downloads (default: 2.0, increase if rate limited)
 - `--verify` - Check download status without downloading
+
+**Overlay Compositing Options:**
+- `--apply-overlays` - Composite overlay PNGs onto base images and videos
+- `--images-only` - Only composite overlays onto images (skip videos)
+- `--videos-only` - Only composite overlays onto videos (skip images)
+- `--verify-composites` - Verify which files have been composited
+- `--rebuild-cache` - Force rebuild of overlay pairs cache
+- `--copy-metadata` - Copy EXIF/GPS metadata to composited files (slow, adds ~1.5s per image)
 
 ### Handling Rate Limits
 
@@ -160,12 +209,17 @@ The script automatically retries rate-limited downloads with exponential backoff
 
 ```
 memories/
-├── images/
+├── images/                          # Downloaded base images
 │   └── 2025-10-16_194703_Image_9ce001ca.jpg
-├── videos/
+├── videos/                          # Downloaded base videos
 │   └── 2025-10-15_223151_Video_9f9eb970.mp4
-└── overlays/
-    └── 2025-10-16_194703_Image_9ce001ca_overlay.png
+├── overlays/                        # Snapchat overlays (stickers, text, filters)
+│   └── 2025-10-16_194703_Image_9ce001ca_overlay.png
+└── composited/                      # Images/videos with overlays applied
+    ├── images/
+    │   └── 2025-10-16_194703_Image_9ce001ca_composited.jpg
+    └── videos/
+        └── 2025-10-15_223151_Video_9f9eb970_composited.mp4
 ```
 
 **Filename format:** `YYYY-MM-DD_HHMMSS_Type_sidXXXXXXXX.ext`
@@ -173,6 +227,71 @@ memories/
 - Time in 24-hour format
 - Media type (Image/Video)
 - First 8 characters of Snapchat session ID (unique identifier)
+- Composited files add `_composited` suffix
+
+## Overlay Compositing
+
+After downloading your memories, you can composite the Snapchat overlays (stickers, text, filters, timestamps) back onto your images and videos to recreate the original look.
+
+### How It Works
+
+1. **Snapchat provides overlays separately**: When you download memories, overlays come as transparent PNG files
+2. **The script matches overlays to media**: Using filename patterns to pair each overlay with its base file
+3. **Compositing creates new files**: Original files remain untouched, composited versions saved to `memories/composited/`
+4. **Fast processing**: ~10 images/second without metadata copying, uses caching for instant restarts
+
+### Quick Start
+
+```bash
+# Composite all overlays (images and videos)
+python download_snapchat_memories.py --apply-overlays
+
+# Only composite images (much faster)
+python download_snapchat_memories.py --apply-overlays --images-only
+```
+
+### Performance Options
+
+**Fast mode (default):**
+- ~10 images/second
+- File timestamps preserved
+- No GPS/EXIF metadata copying
+```bash
+python download_snapchat_memories.py --apply-overlays --images-only
+```
+
+**Complete mode (with metadata):**
+- ~0.6 images/second (slower due to EXIF copying)
+- Preserves all GPS and EXIF metadata
+- Requires ExifTool
+```bash
+python download_snapchat_memories.py --apply-overlays --copy-metadata
+```
+
+### Verification and Resuming
+
+```bash
+# Check what's been composited
+python download_snapchat_memories.py --verify-composites
+
+# Shows:
+# - Total overlay pairs found
+# - Successfully composited images/videos
+# - Failed composites (with error details)
+# - Missing composites (not yet attempted)
+```
+
+The script tracks compositing progress, so you can:
+- Interrupt and resume at any time
+- Automatically skip already-composited files
+- Retry failed composites
+
+### Troubleshooting Composites
+
+**Failed composites are tracked** in `download_progress.json` under `failed_composites`. Common issues:
+- **0-byte overlay files**: Empty overlays from Snapchat (corrupt downloads)
+- **Missing dependencies**: Pillow for images, FFmpeg for videos
+- **Corrupt overlay images**: Run `--verify-composites` to identify
 
 ## Resume & Progress Tracking
 
@@ -180,7 +299,9 @@ The script tracks progress in `download_progress.json`. If interrupted:
 - Re-run the script - it will skip already-downloaded files
 - Already-downloaded files will have their metadata updated if new dependencies are installed
 - Failed downloads are tracked and automatically retried (up to 5 attempts)
-- Use `--verify` to check what's missing
+- Failed composites are tracked separately with error messages
+- Use `--verify` to check download status
+- Use `--verify-composites` to check compositing status
 
 ## Platform Support
 
