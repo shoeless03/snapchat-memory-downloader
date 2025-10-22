@@ -181,6 +181,86 @@ def composite_image(base_file: Path, overlay_file: Path, output_dir: Path, copy_
         return False, f"Error: {str(e)}"
 
 
+def get_video_dimensions(video_file: Path) -> Tuple[int, int]:
+    """Get video dimensions accounting for rotation metadata.
+
+    Args:
+        video_file: Path to video file
+
+    Returns:
+        (width, height) tuple accounting for rotation
+    """
+    try:
+        # Get video stream info including rotation
+        cmd = [
+            'ffprobe',
+            '-v', 'error',
+            '-select_streams', 'v:0',
+            '-show_entries', 'stream=width,height:stream_side_data=rotation',
+            '-of', 'json',
+            str(video_file)
+        ]
+
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        if result.returncode != 0:
+            # Fallback to simple dimension query
+            return _get_simple_dimensions(video_file)
+
+        import json
+        data = json.loads(result.stdout)
+        stream = data.get('streams', [{}])[0]
+
+        width = stream.get('width', 0)
+        height = stream.get('height', 0)
+
+        # Check for rotation in side_data
+        rotation = 0
+        side_data = stream.get('side_data_list', [])
+        for sd in side_data:
+            if 'rotation' in sd:
+                rotation = abs(int(sd['rotation']))
+                break
+
+        # Swap dimensions if rotated 90 or 270 degrees
+        if rotation in [90, 270]:
+            width, height = height, width
+
+        return width, height
+
+    except Exception:
+        return _get_simple_dimensions(video_file)
+
+
+def _get_simple_dimensions(video_file: Path) -> Tuple[int, int]:
+    """Fallback method to get video dimensions without rotation handling.
+
+    Args:
+        video_file: Path to video file
+
+    Returns:
+        (width, height) tuple
+    """
+    try:
+        cmd = [
+            'ffprobe',
+            '-v', 'error',
+            '-select_streams', 'v:0',
+            '-show_entries', 'stream=width,height',
+            '-of', 'csv=s=x:p=0',
+            str(video_file)
+        ]
+
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        if result.returncode == 0:
+            dims = result.stdout.strip().split('x')
+            if len(dims) == 2:
+                return int(dims[0]), int(dims[1])
+    except Exception:
+        pass
+
+    return 1920, 1080  # Default fallback
+
+
 def composite_video(base_file: Path, overlay_file: Path, output_dir: Path, has_exiftool: bool = False) -> Tuple[bool, str]:
     """Composite overlay onto video using FFmpeg.
 
@@ -198,15 +278,20 @@ def composite_video(base_file: Path, overlay_file: Path, output_dir: Path, has_e
         output_filename = base_file.stem + "_composited" + base_file.suffix
         output_path = output_dir / "composited" / "videos" / output_filename
 
-        # Build FFmpeg command
-        # -i video.mp4 -i overlay.png -filter_complex overlay -codec:a copy output.mp4
+        # Get video dimensions (accounting for rotation)
+        video_width, video_height = get_video_dimensions(base_file)
+
+        # Build FFmpeg command with proper overlay scaling
+        # Scale overlay to match video, then composite it
+        filter_complex = f"[1:v]scale={video_width}:{video_height}[ovr];[0:v][ovr]overlay=0:0:format=auto"
+
         cmd = [
             'ffmpeg',
-            '-i', str(base_file),      # Input video
-            '-i', str(overlay_file),   # Input overlay
-            '-filter_complex', 'overlay',  # Overlay filter
-            '-codec:a', 'copy',        # Copy audio without re-encoding
-            '-y',                      # Overwrite output file
+            '-i', str(base_file),           # Input video
+            '-i', str(overlay_file),        # Input overlay
+            '-filter_complex', filter_complex,  # Scale and overlay
+            '-codec:a', 'copy',             # Copy audio without re-encoding
+            '-y',                           # Overwrite output file
             str(output_path)
         ]
 
