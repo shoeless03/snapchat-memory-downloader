@@ -25,7 +25,12 @@ class ProgressTracker:
         if os.path.exists(self.progress_file):
             with open(self.progress_file, 'r') as f:
                 return json.load(f)
-        return {'downloaded': {}, 'failed': {}, 'composited': {'images': {}, 'videos': {}}}
+        return {
+            'downloaded': {},
+            'failed': {},
+            'composited': {'images': {}, 'videos': {}},
+            'failed_composites': {'images': {}, 'videos': {}}
+        }
 
     def save_progress(self):
         """Save download progress to JSON file."""
@@ -136,7 +141,64 @@ class ProgressTracker:
             'base_file': str(base_file),
             'overlay_file': str(overlay_file)
         }
+
+        # Remove from failed composites if present
+        if 'failed_composites' not in self.progress:
+            self.progress['failed_composites'] = {'images': {}, 'videos': {}}
+
+        failed_dict = self.progress['failed_composites']['images' if media_type == 'image' else 'videos']
+        if sid in failed_dict:
+            del failed_dict[sid]
+
         self.save_progress()
+
+    def record_composite_failure(self, sid: str, media_type: str, base_file: str, overlay_file: str, error_msg: str):
+        """Record a failed composite attempt.
+
+        Args:
+            sid: Session ID
+            media_type: 'image' or 'video'
+            base_file: Path to base file
+            overlay_file: Path to overlay file
+            error_msg: Error message
+        """
+        if 'failed_composites' not in self.progress:
+            self.progress['failed_composites'] = {'images': {}, 'videos': {}}
+
+        failed_dict = self.progress['failed_composites']['images' if media_type == 'image' else 'videos']
+
+        if sid not in failed_dict:
+            failed_dict[sid] = {
+                'count': 0,
+                'errors': [],
+                'base_file': str(base_file),
+                'overlay_file': str(overlay_file)
+            }
+
+        failed_dict[sid]['count'] += 1
+        failed_dict[sid]['errors'].append({
+            'timestamp': datetime.now().isoformat(),
+            'error': error_msg
+        })
+        self.save_progress()
+
+    def get_composite_failure_count(self, sid: str, media_type: str) -> int:
+        """Get the number of times a composite has failed.
+
+        Args:
+            sid: Session ID
+            media_type: 'image' or 'video'
+
+        Returns:
+            Number of failed attempts
+        """
+        if 'failed_composites' not in self.progress:
+            return 0
+
+        failed_dict = self.progress['failed_composites'].get('images' if media_type == 'image' else 'videos', {})
+        if sid in failed_dict:
+            return failed_dict[sid].get('count', 0)
+        return 0
 
     def verify_downloads(self, memories: List[Dict]) -> Dict:
         """Verify all downloads are complete.

@@ -61,11 +61,20 @@ def main():
         print(f"Total overlay pairs: {results['total_pairs']}")
         print(f"Composited images: {results['composited_images']}")
         print(f"Composited videos: {results['composited_videos']}")
+        print(f"Failed composites: {results['failed']}")
         print(f"Missing composites: {results['missing']}")
         print(f"{'='*60}\n")
 
+        if results['failed_list']:
+            print("Failed composites:")
+            for item in results['failed_list'][:10]:
+                print(f"  - {item['file']} ({item['type']}, {item['attempts']} attempts)")
+            if len(results['failed_list']) > 10:
+                print(f"  ... and {len(results['failed_list']) - 10} more")
+            print()
+
         if results['missing_list']:
-            print("Missing composites:")
+            print("Missing composites (not yet attempted):")
             for item in results['missing_list'][:10]:
                 print(f"  - {item}")
             if len(results['missing_list']) > 10:

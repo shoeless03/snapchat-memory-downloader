@@ -481,6 +481,12 @@ class SnapchatDownloader:
                 success_count += 1
                 status = "OK"
             else:
+                self.progress_tracker.record_composite_failure(
+                    sid, 'image',
+                    str(pair['base_file']),
+                    str(pair['overlay_file']),
+                    message
+                )
                 failed_count += 1
                 status = "FAIL"
 
@@ -541,10 +547,19 @@ class SnapchatDownloader:
                     str(pair['base_file']),
                     str(pair['overlay_file'])
                 )
-                self.progress_tracker.save_progress()
                 success_count += 1
+            else:
+                self.progress_tracker.record_composite_failure(
+                    sid, 'video',
+                    str(pair['base_file']),
+                    str(pair['overlay_file']),
+                    message
+                )
 
-        print(f"\nVideos: {success_count}/{len(pairs)} composited successfully")
+            self.progress_tracker.save_progress()
+
+        failed_count = len(pairs) - success_count
+        print(f"\nVideos: {success_count} composited, {failed_count} failed")
 
     def verify_composites(self) -> Dict:
         """Verify which files have been composited.
@@ -568,19 +583,44 @@ class SnapchatDownloader:
             if self.progress_tracker.is_composited(p['sid'], 'video')
         ])
 
-        # Find missing
+        # Find missing and failed
         missing_list = []
+        failed_list = []
+
         for pair in image_pairs:
-            if not self.progress_tracker.is_composited(pair['sid'], 'image'):
-                missing_list.append(f"{pair['base_file'].name} (image)")
+            sid = pair['sid']
+            if not self.progress_tracker.is_composited(sid, 'image'):
+                fail_count = self.progress_tracker.get_composite_failure_count(sid, 'image')
+                if fail_count > 0:
+                    failed_list.append({
+                        'file': pair['base_file'].name,
+                        'type': 'image',
+                        'attempts': fail_count,
+                        'sid': sid
+                    })
+                else:
+                    missing_list.append(f"{pair['base_file'].name} (image)")
+
         for pair in video_pairs:
-            if not self.progress_tracker.is_composited(pair['sid'], 'video'):
-                missing_list.append(f"{pair['base_file'].name} (video)")
+            sid = pair['sid']
+            if not self.progress_tracker.is_composited(sid, 'video'):
+                fail_count = self.progress_tracker.get_composite_failure_count(sid, 'video')
+                if fail_count > 0:
+                    failed_list.append({
+                        'file': pair['base_file'].name,
+                        'type': 'video',
+                        'attempts': fail_count,
+                        'sid': sid
+                    })
+                else:
+                    missing_list.append(f"{pair['base_file'].name} (video)")
 
         return {
             'total_pairs': len(pairs),
             'composited_images': composited_images,
             'composited_videos': composited_videos,
             'missing': len(missing_list),
-            'missing_list': missing_list
+            'missing_list': missing_list,
+            'failed': len(failed_list),
+            'failed_list': failed_list
         }
