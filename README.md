@@ -12,6 +12,8 @@ You can figure it out from there right?
 
 see below for futher usage.
 
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/X8X21N8LO2)
+
 End human.
 
 claude wants coffee tho: [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/X8X21N8LO2)
