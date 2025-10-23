@@ -62,10 +62,17 @@ def find_overlay_pairs(output_dir: Path, pairs_cache_file: str = "overlay_pairs.
         filename = overlay_file.stem  # Remove .png
 
         # Remove _overlay suffix
-        if filename.endswith("_overlay"):
-            base_filename = filename[:-8]  # Remove "_overlay"
-        else:
+        if not filename.endswith("_overlay"):
             continue
+
+        base_filename = filename[:-8]  # Remove "_overlay"
+
+        # Extract SID from filename (last part before _overlay)
+        parts = base_filename.split('_')
+        if len(parts) < 4:
+            continue
+
+        sid = parts[-1]  # Last part is the SID (e.g., "036cb75f")
 
         # Determine media type from filename
         if "_Image_" in base_filename:
@@ -77,13 +84,11 @@ def find_overlay_pairs(output_dir: Path, pairs_cache_file: str = "overlay_pairs.
         else:
             continue
 
-        # Find matching base file (could be .jpg, .mp4, etc.)
-        base_files = list(base_dir.glob(f"{base_filename}.*"))
-        if base_files:
-            # Extract SID from filename (last part before extension)
-            parts = base_filename.split('_')
-            sid = parts[-1] if len(parts) >= 4 else ""
+        # Find matching base file by SID (timezone-agnostic)
+        # Match pattern: *_sidXXXXXXXX.ext (where SID is the last part before extension)
+        base_files = list(base_dir.glob(f"*_{sid}.*"))
 
+        if base_files:
             pairs.append({
                 'base_file': base_files[0],
                 'overlay_file': overlay_file,
