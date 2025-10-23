@@ -173,9 +173,6 @@ python download_snapchat_memories.py --apply-overlays --images-only
 # Composite only videos (skips images)
 python download_snapchat_memories.py --apply-overlays --videos-only
 
-# Composite with GPS/EXIF metadata copying (slower but preserves location data)
-python download_snapchat_memories.py --apply-overlays --copy-metadata
-
 # Force rebuild of overlay pairs cache
 python download_snapchat_memories.py --apply-overlays --rebuild-cache
 
@@ -192,12 +189,11 @@ python download_snapchat_memories.py --verify-composites
 - `--verify` - Check download status without downloading
 
 **Overlay Compositing Options:**
-- `--apply-overlays` - Composite overlay PNGs onto base images and videos
+- `--apply-overlays` - Composite overlay PNGs onto base images and videos (automatically copies GPS/EXIF metadata if ExifTool is available)
 - `--images-only` - Only composite overlays onto images (skip videos)
 - `--videos-only` - Only composite overlays onto videos (skip images)
 - `--verify-composites` - Verify which files have been composited
 - `--rebuild-cache` - Force rebuild of overlay pairs cache
-- `--copy-metadata` - Copy EXIF/GPS metadata to composited files (slow, adds ~1.5s per image)
 
 ### Handling Rate Limits
 
@@ -242,7 +238,7 @@ After downloading your memories, you can composite the Snapchat overlays (sticke
 1. **Snapchat provides overlays separately**: When you download memories, overlays come as transparent PNG files
 2. **The script matches overlays to media**: Using filename patterns to pair each overlay with its base file
 3. **Compositing creates new files**: Original files remain untouched, composited versions saved to `memories/composited/`
-4. **Fast processing**: ~10 images/second without metadata copying, uses caching for instant restarts
+4. **Fast processing**: ~10 images/second (or ~0.6 images/second with ExifTool for automatic metadata copying), uses caching for instant restarts
 
 ### Quick Start
 
@@ -256,7 +252,7 @@ python download_snapchat_memories.py --apply-overlays --images-only
 
 ### Performance Options
 
-**Fast mode (default):**
+**Without ExifTool:**
 - ~10 images/second
 - File timestamps preserved
 - No GPS/EXIF metadata copying
@@ -264,12 +260,13 @@ python download_snapchat_memories.py --apply-overlays --images-only
 python download_snapchat_memories.py --apply-overlays --images-only
 ```
 
-**Complete mode (with metadata):**
-- ~0.6 images/second (slower due to EXIF copying)
-- Preserves all GPS and EXIF metadata
-- Requires ExifTool
+**With ExifTool installed:**
+- ~0.6 images/second (slower due to automatic EXIF copying)
+- Automatically preserves all GPS and EXIF metadata
+- ExifTool is automatically detected and used
 ```bash
-python download_snapchat_memories.py --apply-overlays --copy-metadata
+# ExifTool will be detected and used automatically
+python download_snapchat_memories.py --apply-overlays
 ```
 
 ### Verification and Resuming

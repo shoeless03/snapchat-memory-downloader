@@ -101,9 +101,6 @@ python download_snapchat_memories.py --apply-overlays
 
 # Only composite images (faster)
 python download_snapchat_memories.py --apply-overlays --images-only
-
-# With GPS/EXIF metadata (slower, but preserves location data)
-python download_snapchat_memories.py --apply-overlays --copy-metadata
 ```
 
 **Verify composited files:**
@@ -127,12 +124,11 @@ python download_snapchat_memories.py --html "path/to/memories_history.html" \
 - `--verify`: Only verify downloads without downloading
 
 **Overlay Compositing Options:**
-- `--apply-overlays`: Composite overlay PNGs onto base images and videos
+- `--apply-overlays`: Composite overlay PNGs onto base images and videos (automatically copies GPS/EXIF metadata if ExifTool is available)
 - `--images-only`: Only composite overlays onto images (skip videos)
 - `--videos-only`: Only composite overlays onto videos (skip images)
 - `--verify-composites`: Verify which files have been composited
 - `--rebuild-cache`: Force rebuild of overlay pairs cache
-- `--copy-metadata`: Copy EXIF/GPS metadata to composited files (slow, adds ~1.5s per image)
 
 ## Features
 
@@ -148,20 +144,31 @@ python download_snapchat_memories.py --html "path/to/memories_history.html" \
 5. Original files remain untouched
 
 **Performance:**
-- **~10 images/second** without metadata copying
-- **~0.6 images/second** with `--copy-metadata` (preserves GPS/EXIF data)
+- **~10 images/second** without ExifTool
+- **~0.6 images/second** with ExifTool (automatically preserves GPS/EXIF data)
 - Caches overlay-to-media mappings for instant startup on subsequent runs
 - Progress tracking with ETA display
 
 **Requirements:**
 - **Images**: Pillow (install: `pip install Pillow`)
 - **Videos**: FFmpeg (download from https://ffmpeg.org)
-- **Metadata** (optional): ExifTool
+- **GPS/EXIF Metadata** (optional): ExifTool - automatically detected and used if available
 
-**Example Output:**
+**Example Output (with ExifTool):**
 ```
 [20:49:29] Compositing 430 images...
-[20:49:29] Metadata copy disabled (use --copy-metadata to enable, adds ~1.5s per image)
+[20:49:29] Metadata copying enabled (ExifTool detected, adds ~1.5s per image)
+[20:49:29] [1/430 0.2%] OK 2025-10-16_194703_Image_9ce001ca.jpg | 0.6 img/s | ETA: 715s
+[20:49:30] [2/430 0.5%] OK 2025-09-24_161956_Image_5b617512.jpg | 0.6 img/s | ETA: 713s
+...
+[20:59:44] Completed in 615.3s (1.43s per image)
+[20:59:44] Images: 430 composited, 0 failed, 0 skipped
+```
+
+**Example Output (without ExifTool):**
+```
+[20:49:29] Compositing 430 images...
+[20:49:29] Metadata copying disabled (ExifTool not found)
 [20:49:29] [1/430 0.2%] OK 2025-10-16_194703_Image_9ce001ca.jpg | 10.2 img/s | ETA: 42s
 [20:49:29] [2/430 0.5%] OK 2025-09-24_161956_Image_5b617512.jpg | 10.5 img/s | ETA: 41s
 ...
@@ -376,10 +383,15 @@ The script dynamically counts and reports:
 
 ## Recent Updates
 
+### v1.1.0 - Automatic Metadata Copying
+- ✅ Metadata (GPS/EXIF) now automatically copied when ExifTool is available
+- ✅ No manual flag needed - just install ExifTool and it works
+- ✅ Removed `--copy-metadata` flag (feature is now automatic)
+
 ### v1.0.0 - Overlay Compositing Feature
 - ✅ Added overlay compositing to recreate Snapchat's original look
-- ✅ Fast processing: ~10 images/second
-- ✅ Optional metadata copying with ExifTool
+- ✅ Fast processing: ~10 images/second without ExifTool
+- ✅ Automatic metadata copying with ExifTool if installed
 - ✅ Caching system for instant restarts (`overlay_pairs.json`)
 - ✅ Progress tracking with real-time ETA
 - ✅ Resumable: picks up where you left off if interrupted
@@ -404,14 +416,14 @@ Potential improvements:
 
 **Overlay Compositing:**
 - Overlays are matched to base files using filename patterns (same timestamp + SID)
-- ExifTool metadata copying is **opt-in** via `--copy-metadata` flag (adds significant time)
+- GPS/EXIF metadata automatically copied to composited files if ExifTool is available
 - Composited files saved to separate `composited/` folder to preserve originals
 - Cache file (`overlay_pairs.json`) speeds up subsequent runs
 - High-quality JPEG output (quality=95) for composited images
 
 **Data Handling:**
 - Original GUIDs from Snapchat are not preserved (using SID instead)
-- GPS location data embedded in files when using `--copy-metadata` flag
+- GPS location data automatically embedded in files when ExifTool is available
 - Progress tracking in JSON format for easy inspection and debugging
 
 ## Author

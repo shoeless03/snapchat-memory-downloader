@@ -29,7 +29,6 @@ Usage:
         --videos-only            Only composite videos
         --verify-composites      Verify composited files
         --rebuild-cache          Rebuild overlay pairs cache
-        --copy-metadata          Copy metadata (slow, adds ~1.5s per image)
 
 Examples:
     # Download all memories
@@ -39,6 +38,7 @@ Examples:
     python download_snapchat_memories.py --verify
 
     # Apply overlays to create composited images/videos
+    # (GPS/EXIF metadata automatically copied if ExifTool is available)
     python download_snapchat_memories.py --apply-overlays
 
     # Apply overlays only to images (faster)

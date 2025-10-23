@@ -29,8 +29,6 @@ def main():
                         help='Verify which files have been composited')
     parser.add_argument('--rebuild-cache', action='store_true',
                         help='Force rebuild of overlay pairs cache')
-    parser.add_argument('--copy-metadata', action='store_true',
-                        help='Copy EXIF/GPS metadata to composited files (slow, adds ~1.5s per image)')
 
     args = parser.parse_args()
 
@@ -46,8 +44,7 @@ def main():
         downloader.composite_all_overlays(
             images_only=args.images_only,
             videos_only=args.videos_only,
-            rebuild_cache=args.rebuild_cache,
-            copy_metadata=args.copy_metadata
+            rebuild_cache=args.rebuild_cache
         )
         return
 

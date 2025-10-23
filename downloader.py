@@ -389,14 +389,13 @@ class SnapchatDownloader:
         return self.progress_tracker.verify_downloads(memories)
 
     def composite_all_overlays(self, images_only: bool = False, videos_only: bool = False,
-                                rebuild_cache: bool = False, copy_metadata: bool = False):
+                                rebuild_cache: bool = False):
         """Composite all overlays onto their base media files.
 
         Args:
             images_only: Only process images
             videos_only: Only process videos
             rebuild_cache: Force rebuild of overlay pairs cache
-            copy_metadata: Copy EXIF metadata (slow)
         """
         # Find all pairs
         pairs = find_overlay_pairs(self.output_dir, use_cache=not rebuild_cache)
@@ -419,18 +418,17 @@ class SnapchatDownloader:
 
         # Composite images
         if image_pairs:
-            self._composite_images(image_pairs, copy_metadata)
+            self._composite_images(image_pairs)
 
         # Composite videos
         if video_pairs:
             self._composite_videos(video_pairs)
 
-    def _composite_images(self, pairs: List[Dict], copy_metadata: bool):
+    def _composite_images(self, pairs: List[Dict]):
         """Composite all image overlays.
 
         Args:
             pairs: List of image pairs
-            copy_metadata: Whether to copy metadata
         """
         if not self.has_pillow:
             print("\nSkipping images - Pillow not installed")
@@ -454,8 +452,10 @@ class SnapchatDownloader:
         start_time = time.time()
         print(f"\n[{datetime.now().strftime('%H:%M:%S')}] Compositing {len(pending_pairs)} images...")
 
-        if not copy_metadata:
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] Metadata copy disabled (use --copy-metadata to enable, adds ~1.5s per image)")
+        if self.has_exiftool:
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] Metadata copying enabled (ExifTool detected, adds ~1.5s per image)")
+        else:
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] Metadata copying disabled (ExifTool not found)")
 
         success_count = 0
         failed_count = 0
@@ -468,7 +468,6 @@ class SnapchatDownloader:
                 pair['base_file'],
                 pair['overlay_file'],
                 self.output_dir,
-                copy_metadata=copy_metadata,
                 has_exiftool=self.has_exiftool
             )
 

@@ -117,15 +117,14 @@ def find_overlay_pairs(output_dir: Path, pairs_cache_file: str = "overlay_pairs.
     return pairs
 
 
-def composite_image(base_file: Path, overlay_file: Path, output_dir: Path, copy_metadata: bool = False, has_exiftool: bool = False) -> Tuple[bool, str]:
+def composite_image(base_file: Path, overlay_file: Path, output_dir: Path, has_exiftool: bool = False) -> Tuple[bool, str]:
     """Composite overlay onto image using Pillow.
 
     Args:
         base_file: Path to base image
         overlay_file: Path to overlay PNG
         output_dir: Output directory for composited images
-        copy_metadata: Whether to copy EXIF metadata
-        has_exiftool: Whether exiftool is available
+        has_exiftool: Whether exiftool is available (auto-copies metadata if True)
 
     Returns:
         (success, message)
@@ -171,8 +170,8 @@ def composite_image(base_file: Path, overlay_file: Path, output_dir: Path, copy_
         stat = os.stat(base_file)
         os.utime(output_path, (stat.st_atime, stat.st_mtime))
 
-        # Copy metadata using exiftool if requested and available
-        if copy_metadata and has_exiftool:
+        # Copy metadata using exiftool if available
+        if has_exiftool:
             copy_metadata_with_exiftool(base_file, output_path, has_exiftool)
 
         return True, "Success"
