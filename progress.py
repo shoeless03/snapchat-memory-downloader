@@ -61,7 +61,7 @@ class ProgressTracker:
     def save_progress(self):
         """Save download progress to JSON file with backup and atomic write."""
         import shutil
-        import tempfile
+        import time
 
         # Create backup of existing file before saving
         backup_file = self.progress_file + '.backup'
@@ -78,10 +78,23 @@ class ProgressTracker:
                 json.dump(self.progress, f, indent=2)
 
             # Replace original file with temp file (atomic on most systems)
-            if os.path.exists(self.progress_file):
-                os.replace(temp_file, self.progress_file)
-            else:
-                os.rename(temp_file, self.progress_file)
+            # Retry on Windows if file is locked (e.g., open in editor)
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    if os.path.exists(self.progress_file):
+                        os.replace(temp_file, self.progress_file)
+                    else:
+                        os.rename(temp_file, self.progress_file)
+                    break  # Success!
+                except PermissionError as e:
+                    if attempt < max_retries - 1:
+                        # File might be locked (open in editor), wait and retry
+                        time.sleep(0.1)
+                        continue
+                    else:
+                        # Final attempt failed
+                        raise
 
         except Exception as e:
             # Clean up temp file if it exists
@@ -91,6 +104,8 @@ class ProgressTracker:
                 except:
                     pass
             print(f"ERROR: Failed to save progress file: {e}")
+            if "WinError 5" in str(e) or "Access is denied" in str(e):
+                print(f"HINT: Close {self.progress_file} if it's open in an editor/IDE")
             raise
 
     def is_downloaded(self, sid: str) -> bool:
