@@ -4,6 +4,8 @@ data from snapchat/
 
 # Exclude download progress and cache files (contains personal data/paths)
 download_progress.json
+download_progress.json.backup
+download_progress.json.tmp
 overlay_pairs.json
 
 # Python

@@ -23,8 +23,34 @@ class ProgressTracker:
     def _load_progress(self) -> Dict:
         """Load download progress from JSON file."""
         if os.path.exists(self.progress_file):
-            with open(self.progress_file, 'r') as f:
-                return json.load(f)
+            try:
+                with open(self.progress_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    # Validate structure
+                    if not isinstance(data, dict):
+                        raise ValueError("Progress file is not a JSON object")
+                    return data
+            except json.JSONDecodeError as e:
+                print(f"\n{'='*70}")
+                print(f"ERROR: Progress file is corrupted!")
+                print(f"{'='*70}")
+                print(f"File: {self.progress_file}")
+                print(f"Error: {e}")
+                print(f"\nThe progress file contains invalid JSON and cannot be loaded.")
+                print(f"Please restore from backup or delete the file to start fresh.")
+                print(f"{'='*70}\n")
+                import sys
+                sys.exit(1)
+            except Exception as e:
+                print(f"\n{'='*70}")
+                print(f"ERROR: Failed to load progress file!")
+                print(f"{'='*70}")
+                print(f"File: {self.progress_file}")
+                print(f"Error: {e}")
+                print(f"\nCannot continue without a valid progress file.")
+                print(f"{'='*70}\n")
+                import sys
+                sys.exit(1)
         return {
             'downloaded': {},
             'failed': {},
@@ -33,9 +59,39 @@ class ProgressTracker:
         }
 
     def save_progress(self):
-        """Save download progress to JSON file."""
-        with open(self.progress_file, 'w') as f:
-            json.dump(self.progress, f, indent=2)
+        """Save download progress to JSON file with backup and atomic write."""
+        import shutil
+        import tempfile
+
+        # Create backup of existing file before saving
+        backup_file = self.progress_file + '.backup'
+        if os.path.exists(self.progress_file):
+            try:
+                shutil.copy2(self.progress_file, backup_file)
+            except Exception as e:
+                print(f"WARNING: Could not create backup: {e}")
+
+        # Write to temporary file first (atomic write)
+        temp_file = self.progress_file + '.tmp'
+        try:
+            with open(temp_file, 'w', encoding='utf-8') as f:
+                json.dump(self.progress, f, indent=2)
+
+            # Replace original file with temp file (atomic on most systems)
+            if os.path.exists(self.progress_file):
+                os.replace(temp_file, self.progress_file)
+            else:
+                os.rename(temp_file, self.progress_file)
+
+        except Exception as e:
+            # Clean up temp file if it exists
+            if os.path.exists(temp_file):
+                try:
+                    os.remove(temp_file)
+                except:
+                    pass
+            print(f"ERROR: Failed to save progress file: {e}")
+            raise
 
     def is_downloaded(self, sid: str) -> bool:
         """Check if a memory has been downloaded.
