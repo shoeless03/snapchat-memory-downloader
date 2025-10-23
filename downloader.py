@@ -647,6 +647,27 @@ class SnapchatDownloader:
         timezone_name = local_dt.tzname()
         print(f"[{datetime.now().strftime('%H:%M:%S')}] System timezone: {timezone_name}")
 
+        # Initialize timezone_converted field for existing entries if missing
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] Checking progress file for missing timezone fields...")
+        updated_count = 0
+        for sid in self.progress_tracker.progress.get('downloaded', {}).keys():
+            if 'timezone_converted' not in self.progress_tracker.progress['downloaded'][sid]:
+                self.progress_tracker.progress['downloaded'][sid]['timezone_converted'] = False
+                self.progress_tracker.progress['downloaded'][sid]['local_date'] = None
+                updated_count += 1
+
+        # Also check composited files
+        for media_type in ['images', 'videos']:
+            for sid in self.progress_tracker.progress.get('composited', {}).get(media_type, {}).keys():
+                if 'timezone_converted' not in self.progress_tracker.progress['composited'][media_type][sid]:
+                    self.progress_tracker.progress['composited'][media_type][sid]['timezone_converted'] = False
+                    self.progress_tracker.progress['composited'][media_type][sid]['local_date'] = None
+                    updated_count += 1
+
+        if updated_count > 0:
+            self.progress_tracker.save_progress()
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] Initialized {updated_count} entries with timezone tracking fields")
+
         # Define folders to process
         folders = [
             self.output_dir / "images",
@@ -679,10 +700,16 @@ class SnapchatDownloader:
                         continue
 
                     # Find full SID in progress file (match first 8 chars)
+                    # For composited files, check both downloaded and composited sections
                     full_sid = None
+                    utc_date = None
+                    is_composited_file = "_composited" in file_path.stem
+
+                    # First try to find in downloaded section
                     for sid in self.progress_tracker.progress['downloaded'].keys():
                         if sid.startswith(sid_short):
                             full_sid = sid
+                            utc_date = self.progress_tracker.get_utc_date(full_sid)
                             break
 
                     if not full_sid:
@@ -691,12 +718,22 @@ class SnapchatDownloader:
                         continue
 
                     # Check if already converted
-                    if self.progress_tracker.is_timezone_converted(full_sid):
+                    # For composited files, also check if it's marked in the composited section
+                    already_converted = False
+                    if is_composited_file:
+                        # Check composited section for timezone conversion tracking
+                        media_type_key = 'images' if 'images' in str(folder) else 'videos'
+                        composited_dict = self.progress_tracker.progress.get('composited', {}).get(media_type_key, {})
+                        if sid_short in composited_dict:
+                            already_converted = composited_dict[sid_short].get('timezone_converted', False)
+                    else:
+                        already_converted = self.progress_tracker.is_timezone_converted(full_sid)
+
+                    if already_converted:
                         skipped_files += 1
                         continue
 
                     # Get UTC date from progress file
-                    utc_date = self.progress_tracker.get_utc_date(full_sid)
                     if not utc_date:
                         print(f"[{datetime.now().strftime('%H:%M:%S')}] WARNING: No UTC date found for SID {sid_short}")
                         failed_files += 1
@@ -724,7 +761,15 @@ class SnapchatDownloader:
 
                         # Mark as converted
                         _, local_date_str = utc_to_local(utc_date)
-                        self.progress_tracker.mark_timezone_converted(full_sid, local_date_str)
+                        if is_composited_file:
+                            # Mark composited file as converted in its section
+                            media_type_key = 'images' if 'images' in str(folder) else 'videos'
+                            if sid_short in self.progress_tracker.progress.get('composited', {}).get(media_type_key, {}):
+                                self.progress_tracker.progress['composited'][media_type_key][sid_short]['timezone_converted'] = True
+                                self.progress_tracker.progress['composited'][media_type_key][sid_short]['local_date'] = local_date_str
+                                self.progress_tracker.save_progress()
+                        else:
+                            self.progress_tracker.mark_timezone_converted(full_sid, local_date_str)
 
                         converted_files += 1
                         continue
@@ -738,7 +783,15 @@ class SnapchatDownloader:
 
                         # Mark as converted in progress file
                         _, local_date_str = utc_to_local(utc_date)
-                        self.progress_tracker.mark_timezone_converted(full_sid, local_date_str)
+                        if is_composited_file:
+                            # Mark composited file as converted in its section
+                            media_type_key = 'images' if 'images' in str(folder) else 'videos'
+                            if sid_short in self.progress_tracker.progress.get('composited', {}).get(media_type_key, {}):
+                                self.progress_tracker.progress['composited'][media_type_key][sid_short]['timezone_converted'] = True
+                                self.progress_tracker.progress['composited'][media_type_key][sid_short]['local_date'] = local_date_str
+                                self.progress_tracker.save_progress()
+                        else:
+                            self.progress_tracker.mark_timezone_converted(full_sid, local_date_str)
 
                         converted_files += 1
 
