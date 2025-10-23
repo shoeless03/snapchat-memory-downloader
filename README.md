@@ -1,5 +1,5 @@
 
-I am not a bot but the rest of this is. Created with Claude Code - use at your own risk.
+I am not a bot but the rest of this is. Created with Claude Code alskda;sldk
 
 This assumes you've exported your data and they sent you something like my_data_blah blah folder with html in it.
 
@@ -9,13 +9,7 @@ You can figure it out from there right?
 
 ;] 
 
-see below ai slop for futher usage.
-
-works on my machine.
-
-extra:
- - I personally don't care about the overlay data (it's like black image with the text you add over images/videos) so they go to their own folder.  
-
+see below for futher usage.
 
 End human.
 
