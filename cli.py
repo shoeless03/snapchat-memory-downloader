@@ -29,6 +29,8 @@ def main():
                         help='Verify which files have been composited')
     parser.add_argument('--rebuild-cache', action='store_true',
                         help='Force rebuild of overlay pairs cache')
+    parser.add_argument('--convert-timezone', action='store_true',
+                        help='Convert all file timestamps and filenames from UTC to local timezone')
 
     args = parser.parse_args()
 
@@ -37,6 +39,12 @@ def main():
 
     # Create downloader instance
     downloader = SnapchatDownloader(args.html, args.output)
+
+    # Run timezone conversion
+    if args.convert_timezone:
+        print("Converting all files from UTC to local timezone...")
+        downloader.convert_all_to_local_timezone()
+        return
 
     # Run in composite overlay mode
     if args.apply_overlays:

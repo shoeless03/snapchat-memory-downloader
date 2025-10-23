@@ -108,6 +108,12 @@ python download_snapchat_memories.py --apply-overlays --images-only
 python download_snapchat_memories.py --verify-composites
 ```
 
+**Convert timestamps to local timezone:**
+```bash
+# Convert all file timestamps and filenames from UTC to your local timezone
+python download_snapchat_memories.py --convert-timezone
+```
+
 **Custom options:**
 ```bash
 python download_snapchat_memories.py --html "path/to/memories_history.html" \
@@ -129,6 +135,9 @@ python download_snapchat_memories.py --html "path/to/memories_history.html" \
 - `--videos-only`: Only composite overlays onto videos (skip images)
 - `--verify-composites`: Verify which files have been composited
 - `--rebuild-cache`: Force rebuild of overlay pairs cache
+
+**Timezone Conversion Options:**
+- `--convert-timezone`: Convert all file timestamps and filenames from UTC to local timezone (safe to run multiple times, skips already converted files)
 
 ## Features
 
@@ -175,6 +184,44 @@ python download_snapchat_memories.py --html "path/to/memories_history.html" \
 [20:50:11] Completed in 42.3s (0.10s per image)
 [20:50:11] Images: 430 composited, 0 failed, 0 skipped
 ```
+
+### Timezone Conversion
+
+By default, all files are downloaded with UTC timestamps (matching Snapchat's format). You can convert all timestamps and filenames to your local timezone.
+
+**How it works:**
+1. Reads UTC dates from `download_progress.json` for each file
+2. Converts timestamps to your system's local timezone
+3. Renames files to use local time in filenames
+4. Updates file modification/creation times to local time
+5. Tracks conversion status to avoid duplicate conversions
+6. Preserves UTC dates in progress file for reference
+
+**Usage:**
+```bash
+python download_snapchat_memories.py --convert-timezone
+```
+
+**What gets converted:**
+- All images in `memories/images/`
+- All videos in `memories/videos/`
+- All overlays in `memories/overlays/`
+- All composited files in `memories/composited/images/` and `memories/composited/videos/`
+
+**Example:**
+- Before: `2025-10-16_194703_Image_9ce001ca.jpg` (UTC: 7:47 PM)
+- After: `2025-10-16_124703_Image_9ce001ca.jpg` (EST: 12:47 PM, assuming EST timezone)
+
+**Progress tracking:**
+The `download_progress.json` file is updated to track:
+- `timezone_converted`: Whether the file has been converted
+- `local_date`: The date/time in your local timezone
+- `date`: Original UTC date (preserved for reference)
+
+**Safety:**
+- Safe to run multiple times - skips already converted files
+- Original UTC dates preserved in progress file
+- Can be undone by re-downloading files (they'll be UTC again)
 
 ### File Naming Convention
 
@@ -382,6 +429,13 @@ The script dynamically counts and reports:
 - Progress saved after each successful download
 
 ## Recent Updates
+
+### v1.2.0 - Timezone Conversion
+- ✅ New `--convert-timezone` command to convert all files from UTC to local timezone
+- ✅ Converts both filenames and file timestamps
+- ✅ Tracks conversion status in progress file
+- ✅ Preserves original UTC dates for reference
+- ✅ Safe to run multiple times (skips already converted files)
 
 ### v1.1.0 - Automatic Metadata Copying
 - ✅ Metadata (GPS/EXIF) now automatically copied when ExifTool is available

@@ -56,9 +56,11 @@ class ProgressTracker:
             memory: Memory dictionary with date and media_type
         """
         self.progress['downloaded'][sid] = {
-            'date': memory['date'],
+            'date': memory['date'],  # Always UTC
             'media_type': memory['media_type'],
-            'timestamp': datetime.now().isoformat()
+            'timestamp': datetime.now().isoformat(),
+            'timezone_converted': False,  # Track if converted to local timezone
+            'local_date': None  # Will be set when timezone is converted
         }
 
         # Remove from failed list if present
@@ -199,6 +201,57 @@ class ProgressTracker:
         if sid in failed_dict:
             return failed_dict[sid].get('count', 0)
         return 0
+
+    def is_timezone_converted(self, sid: str) -> bool:
+        """Check if a file has been converted to local timezone.
+
+        Args:
+            sid: Session ID
+
+        Returns:
+            True if timezone has been converted
+        """
+        if sid in self.progress['downloaded']:
+            return self.progress['downloaded'][sid].get('timezone_converted', False)
+        return False
+
+    def mark_timezone_converted(self, sid: str, local_date: str):
+        """Mark a file as converted to local timezone.
+
+        Args:
+            sid: Session ID
+            local_date: Date/time in local timezone (same format as UTC date)
+        """
+        if sid in self.progress['downloaded']:
+            self.progress['downloaded'][sid]['timezone_converted'] = True
+            self.progress['downloaded'][sid]['local_date'] = local_date
+            self.save_progress()
+
+    def get_utc_date(self, sid: str) -> str:
+        """Get the UTC date for a SID.
+
+        Args:
+            sid: Session ID
+
+        Returns:
+            UTC date string or None
+        """
+        if sid in self.progress['downloaded']:
+            return self.progress['downloaded'][sid].get('date')
+        return None
+
+    def get_local_date(self, sid: str) -> str:
+        """Get the local timezone date for a SID.
+
+        Args:
+            sid: Session ID
+
+        Returns:
+            Local date string or None
+        """
+        if sid in self.progress['downloaded']:
+            return self.progress['downloaded'][sid].get('local_date')
+        return None
 
     def verify_downloads(self, memories: List[Dict]) -> Dict:
         """Verify all downloads are complete.

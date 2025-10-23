@@ -16,6 +16,12 @@ from snap_parser import parse_html_file
 from progress import ProgressTracker
 from metadata import set_file_timestamps, add_gps_metadata, update_existing_file_metadata
 from compositor import find_overlay_pairs, composite_image, composite_video
+from timezone_converter import (
+    utc_to_local,
+    generate_local_filename,
+    parse_filename_for_sid,
+    convert_file_timestamps_to_local
+)
 
 
 class SnapchatDownloader:
@@ -623,3 +629,131 @@ class SnapchatDownloader:
             'failed': len(failed_list),
             'failed_list': failed_list
         }
+
+    def convert_all_to_local_timezone(self):
+        """Convert all file timestamps and filenames from UTC to local timezone.
+
+        This function:
+        1. Scans all files in images/, videos/, overlays/, and composited/ folders
+        2. Uses download_progress.json to get UTC dates for each file
+        3. Renames files to use local timezone
+        4. Updates file modification/creation timestamps to local time
+        5. Tracks conversion status in progress file
+        """
+        print(f"\n[{datetime.now().strftime('%H:%M:%S')}] Converting files from UTC to local timezone...")
+
+        # Get system timezone info
+        local_dt, local_str = utc_to_local("2025-01-01 00:00:00 UTC")
+        timezone_name = local_dt.tzname()
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] System timezone: {timezone_name}")
+
+        # Define folders to process
+        folders = [
+            self.output_dir / "images",
+            self.output_dir / "videos",
+            self.output_dir / "overlays",
+            self.output_dir / "composited" / "images",
+            self.output_dir / "composited" / "videos"
+        ]
+
+        total_files = 0
+        converted_files = 0
+        skipped_files = 0
+        failed_files = 0
+
+        for folder in folders:
+            if not folder.exists():
+                continue
+
+            print(f"\n[{datetime.now().strftime('%H:%M:%S')}] Processing {folder.relative_to(self.output_dir)}...")
+
+            for file_path in folder.glob("*.*"):
+                if file_path.is_file():
+                    total_files += 1
+
+                    # Extract SID from filename
+                    sid_short = parse_filename_for_sid(file_path.name)
+                    if not sid_short:
+                        print(f"[{datetime.now().strftime('%H:%M:%S')}] WARNING: Could not parse SID from {file_path.name}")
+                        failed_files += 1
+                        continue
+
+                    # Find full SID in progress file (match first 8 chars)
+                    full_sid = None
+                    for sid in self.progress_tracker.progress['downloaded'].keys():
+                        if sid.startswith(sid_short):
+                            full_sid = sid
+                            break
+
+                    if not full_sid:
+                        print(f"[{datetime.now().strftime('%H:%M:%S')}] WARNING: SID {sid_short} not found in progress file for {file_path.name}")
+                        failed_files += 1
+                        continue
+
+                    # Check if already converted
+                    if self.progress_tracker.is_timezone_converted(full_sid):
+                        skipped_files += 1
+                        continue
+
+                    # Get UTC date from progress file
+                    utc_date = self.progress_tracker.get_utc_date(full_sid)
+                    if not utc_date:
+                        print(f"[{datetime.now().strftime('%H:%M:%S')}] WARNING: No UTC date found for SID {sid_short}")
+                        failed_files += 1
+                        continue
+
+                    # Determine file type and suffix
+                    media_type = self.progress_tracker.progress['downloaded'][full_sid].get('media_type', 'Image')
+                    suffix = ""
+                    if "_overlay" in file_path.stem:
+                        suffix = "_overlay"
+                    elif "_composited" in file_path.stem:
+                        suffix = "_composited"
+
+                    # Generate new filename with local timezone
+                    extension = file_path.suffix[1:]  # Remove the dot
+                    new_filename = generate_local_filename(
+                        utc_date, media_type, sid_short, extension, suffix
+                    )
+                    new_path = file_path.parent / new_filename
+
+                    # Skip if filename hasn't changed (already in local time or same as UTC)
+                    if new_path == file_path:
+                        # Still update timestamps
+                        convert_file_timestamps_to_local(file_path, utc_date, self.has_pywin32)
+
+                        # Mark as converted
+                        _, local_date_str = utc_to_local(utc_date)
+                        self.progress_tracker.mark_timezone_converted(full_sid, local_date_str)
+
+                        converted_files += 1
+                        continue
+
+                    # Rename file
+                    try:
+                        file_path.rename(new_path)
+
+                        # Update file timestamps
+                        convert_file_timestamps_to_local(new_path, utc_date, self.has_pywin32)
+
+                        # Mark as converted in progress file
+                        _, local_date_str = utc_to_local(utc_date)
+                        self.progress_tracker.mark_timezone_converted(full_sid, local_date_str)
+
+                        converted_files += 1
+
+                        if converted_files % 50 == 0:
+                            print(f"[{datetime.now().strftime('%H:%M:%S')}] Progress: {converted_files} converted, {skipped_files} skipped, {failed_files} failed")
+
+                    except Exception as e:
+                        print(f"[{datetime.now().strftime('%H:%M:%S')}] ERROR: Failed to convert {file_path.name}: {e}")
+                        failed_files += 1
+
+        # Print summary
+        print(f"\n[{datetime.now().strftime('%H:%M:%S')}] Timezone Conversion Complete!")
+        print(f"{'='*60}")
+        print(f"Total files processed: {total_files}")
+        print(f"Converted: {converted_files}")
+        print(f"Skipped (already converted): {skipped_files}")
+        print(f"Failed: {failed_files}")
+        print(f"{'='*60}\n")

@@ -29,6 +29,7 @@ Usage:
         --videos-only            Only composite videos
         --verify-composites      Verify composited files
         --rebuild-cache          Rebuild overlay pairs cache
+        --convert-timezone       Convert all files from UTC to local timezone
 
 Examples:
     # Download all memories
@@ -43,6 +44,9 @@ Examples:
 
     # Apply overlays only to images (faster)
     python download_snapchat_memories.py --apply-overlays --images-only
+
+    # Convert all file timestamps and names from UTC to local timezone
+    python download_snapchat_memories.py --convert-timezone
 
 For more information, see CLAUDE.md
 """

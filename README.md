@@ -180,6 +180,14 @@ python download_snapchat_memories.py --apply-overlays --rebuild-cache
 python download_snapchat_memories.py --verify-composites
 ```
 
+#### Timezone Conversion
+```bash
+# Convert all file timestamps and filenames from UTC to local timezone
+python download_snapchat_memories.py --convert-timezone
+
+# Safe to run multiple times - automatically skips already converted files
+```
+
 #### All Available Options
 
 **Download Options:**
@@ -194,6 +202,9 @@ python download_snapchat_memories.py --verify-composites
 - `--videos-only` - Only composite overlays onto videos (skip images)
 - `--verify-composites` - Verify which files have been composited
 - `--rebuild-cache` - Force rebuild of overlay pairs cache
+
+**Timezone Conversion Options:**
+- `--convert-timezone` - Convert all file timestamps and filenames from UTC to local timezone
 
 ### Handling Rate Limits
 
