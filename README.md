@@ -92,6 +92,9 @@ The script will automatically detect these at startup and prompt you if they're 
    ```
 
 3. **Get your Snapchat data:**
+
+** human here - claude made this shit up. idk how true it is. end human **
+
    - Go to [Snapchat Account Settings](https://accounts.snapchat.com/)
    - Navigate to "My Data" → "Submit Request"
    - Select "Memories" and download your data
