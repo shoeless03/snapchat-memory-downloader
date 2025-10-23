@@ -1,15 +1,18 @@
 
-I am not a bot but the rest of this is. Created with Claude Code alskda;sldk
+I am not a bot but the rest of this is. Created with that claude fucker.
+
 
 This assumes you've exported your data and they sent you something like my_data_blah blah folder with html in it.
 
-change that folder name to "data from snapchat" and this script should be at the same level as the folder you downloaded and renamed.
+change that folder name to "data from snapchat" and download_snapchat_memories.py should be at the same level as the folder you downloaded and renamed.
 
 You can figure it out from there right? 
 
 ;] 
 
 see below for futher usage.
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/X8X21N8LO2)
 
 End human.
 
