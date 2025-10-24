@@ -183,6 +183,9 @@ python download_snapchat_memories.py --verify-composites
 ```
 
 #### Timezone Conversion
+human here: 
+still experimental. currently just converts everything in to your current timezone (where you are running the script)
+end human
 ```bash
 # Convert all file timestamps and filenames from UTC to local timezone
 python download_snapchat_memories.py --convert-timezone
