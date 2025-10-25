@@ -27,7 +27,8 @@ Download the latest release for your platform:
 - [**macOS**](../../releases/latest) - Coming soon
 - [**Linux**](../../releases/latest) - Coming soon
 
-Just download, extract, and run! All dependencies are bundled.
+**What's bundled:** Python + core libraries (requests, Pillow, pywin32)
+**Optional downloads:** FFmpeg (video overlays) and ExifTool (GPS metadata) - see below
 
 **Or install from source** (requires Python 3.11+):
 ```bash
