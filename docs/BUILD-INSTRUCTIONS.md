@@ -19,7 +19,7 @@ PyInstaller creates platform-specific binaries that include Python and all depen
 - Git (to clone/manage the repository)
 
 ### Development & Testing (Optional)
-- pytest (for running tests): `pip install -r requirements-test.txt`
+- pytest (for running tests): `pip install -r tests/requirements-test.txt`
 
 ### Platform-Specific
 
@@ -151,7 +151,7 @@ Before building, run the test suite to verify functionality:
 
 ```bash
 # Install test dependencies
-pip install -r requirements-test.txt
+pip install -r tests/requirements-test.txt
 
 # Run all tests
 pytest
@@ -168,7 +168,7 @@ pytest --cov=scripts --cov-report=html
 - ⏭️ 4-6 tests may be skipped (platform-specific)
 - ❌ 0 tests should fail
 
-See [TESTING.md](../TESTING.md) for detailed testing documentation.
+See [TESTING.md](../tests/TESTING.md) for detailed testing documentation.
 
 ### Testing Builds
 

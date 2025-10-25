@@ -116,7 +116,7 @@ python download_snapchat_memories.py --apply-overlays
 - **[User Guide](docs/README.md)** - Complete usage instructions and features
 - **[Developer Guide](docs/CLAUDE.md)** - Project architecture and implementation details
 - **[Build Instructions](docs/BUILD-INSTRUCTIONS.md)** - How to create executables for distribution
-- **[Testing Guide](TESTING.md)** - Unit tests and testing documentation
+- **[Testing Guide](tests/TESTING.md)** - Unit tests and testing documentation
 
 ## Project Structure
 
@@ -208,7 +208,7 @@ MIT License - see [docs/LICENSE](docs/LICENSE)
 
 ```bash
 # Install test dependencies
-pip install -r requirements-test.txt
+pip install -r tests/requirements-test.txt
 
 # Run all tests
 pytest
@@ -217,7 +217,7 @@ pytest
 pytest --cov=scripts --cov-report=html
 ```
 
-**Test Suite:** 138+ passing tests covering all functionality. See [TESTING.md](TESTING.md) for details.
+**Test Suite:** 138+ passing tests covering all functionality. See [TESTING.md](tests/TESTING.md) for details.
 
 ### Contributing
 
