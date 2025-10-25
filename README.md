@@ -16,6 +16,16 @@ claude wants coffee tho: [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](h
 
 ## Download
 
+### RECOMMENDED:
+**install from source** (requires Python 3.11+):
+```bash
+git clone https://github.com/shoeless03/snapchat-memory-downloader.git
+cd snapchat-memory-downloader
+pip install requests
+python download_snapchat_memories.py
+```
+
+### Less tech experiences. Will be not as up to date. See your release post for more info.
 **Pre-built executables available** - No Python installation required!
 
 Download the latest release for your platform:
@@ -26,14 +36,7 @@ Download the latest release for your platform:
 **What's bundled:** Python + core libraries (requests, Pillow, pywin32)
 **Optional downloads:** FFmpeg (video overlays) and ExifTool (GPS metadata) - see below
 
-### RECOMMENDED:
-**Or install from source** (requires Python 3.11+):
-```bash
-git clone https://github.com/shoeless03/snapchat-memory-downloader.git
-cd snapchat-memory-downloader
-pip install requests
-python download_snapchat_memories.py
-```
+
 
 ## Overview
 
