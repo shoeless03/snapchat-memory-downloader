@@ -16,8 +16,9 @@ claude wants coffee tho: [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](h
 
 ## Download
 
-### Less tech experiences:
-Will be not as up to date. See your release post for more info.
+### Less tech experience
+Will be not as up to date. See your downloaded release post for more info.
+
 **Pre-built executables available** - No Python installation required!
 
 Download the latest release for your platform:
