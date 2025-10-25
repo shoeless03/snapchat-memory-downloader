@@ -126,39 +126,6 @@ python download_snapchat_memories.py --apply-overlays
 - **[Build Instructions](docs/BUILD-INSTRUCTIONS.md)** - How to create executables for distribution
 - **[Testing Guide](tests/TESTING.md)** - Unit tests and testing documentation
 
-## Project Structure
-
-```
-snap2/
-├── download_snapchat_memories.py    # Main entry point
-├── scripts/                          # Python source modules
-│   ├── cli.py                       # Command-line interface
-│   ├── downloader.py                # Download orchestration
-│   ├── compositor.py                # Overlay compositing
-│   ├── metadata.py                  # GPS/EXIF metadata
-│   ├── progress.py                  # Progress tracking
-│   ├── snap_config.py               # Configuration
-│   └── snap_parser.py               # HTML parsing
-├── docs/                            # Documentation
-│   ├── README.md                    # User guide
-│   ├── CLAUDE.md                    # Developer guide
-│   ├── BUILD-INSTRUCTIONS.md        # Build guide
-│   └── LICENSE                      # MIT License
-├── tools/                           # Build and development tools
-│   ├── build/                       # Build scripts and spec files
-│   └── exiftool/                    # ExifTool binary (optional)
-├── tests/                           # Test files
-├── data from snapchat/              # Your Snapchat export (you provide this)
-│   └── html/
-│       └── memories_history.html
-└── memories/                        # Downloaded memories (created by script)
-    ├── images/
-    ├── videos/
-    ├── overlays/
-    └── composited/
-```
-
-
 ## License
 
 MIT License - see [docs/LICENSE](docs/LICENSE)
