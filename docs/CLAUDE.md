@@ -49,6 +49,38 @@ A Python script (`download_snapchat_memories.py`) that:
    - List failed downloads and retry counts
    - Summary statistics
 
+## Project Structure
+
+```
+snap2/
+├── download_snapchat_memories.py    # Main entry point
+├── scripts/                          # Python source modules
+│   ├── cli.py                       # Command-line interface
+│   ├── downloader.py                # Download orchestration
+│   ├── compositor.py                # Overlay compositing
+│   ├── metadata.py                  # GPS/EXIF metadata
+│   ├── progress.py                  # Progress tracking
+│   ├── snap_config.py               # Configuration
+│   └── snap_parser.py               # HTML parsing
+├── docs/                            # Documentation
+│   ├── README.md                    # User guide
+│   ├── CLAUDE.md                    # Developer guide
+│   ├── BUILD-INSTRUCTIONS.md        # Build guide
+│   └── LICENSE                      # MIT License
+├── tools/                           # Build and development tools
+│   ├── build/                       # Build scripts and spec files
+│   └── exiftool/                    # ExifTool binary (optional)
+├── tests/                           # Test files
+├── data from snapchat/              # Your Snapchat export (you provide this)
+│   └── html/
+│       └── memories_history.html
+└── memories/                        # Downloaded memories (created by script)
+    ├── images/
+    ├── videos/
+    ├── overlays/
+    └── composited/
+```
+
 ## File Structure
 
 ```
