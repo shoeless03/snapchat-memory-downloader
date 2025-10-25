@@ -54,14 +54,8 @@ temp_*.zip
 temp_*.download
 bad_*.dat
 
-# Third-party tools and binaries
-exiftool-13.39_64/
-exiftool*.exe
-exiftool*.zip
-exiftool
-test_*.py
-
-# Incomplete refactoring work (WIP)
-snapchat/
-config/
-data/
+# Third-party tools and binaries (now in tools/exiftool/ - still ignored)
+tools/exiftool/exiftool-13.39_64/
+tools/exiftool/exiftool*.exe
+tools/exiftool/exiftool*.zip
+tools/exiftool/exiftool

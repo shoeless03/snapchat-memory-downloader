@@ -3,11 +3,11 @@
 block_cipher = None
 
 a = Analysis(
-    ['download_snapchat_memories.py'],
-    pathex=[],
+    ['../../download_snapchat_memories.py'],
+    pathex=['../../scripts'],  # Add scripts directory to path
     binaries=[],
     datas=[
-        ('licenses', 'licenses'),  # Include license files
+        ('../../docs/licenses', 'licenses'),  # Include license files
     ],
     hiddenimports=[
         'PIL._tkinter_finder',  # Pillow sometimes needs this

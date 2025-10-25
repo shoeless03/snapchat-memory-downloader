@@ -38,6 +38,7 @@ PyInstaller creates platform-specific binaries that include Python and all depen
 git clone https://github.com/shoeless03/snapchat-memory-downloader.git
 cd snapchat-memory-downloader
 git checkout packaging
+cd tools\build
 build-windows.bat
 ```
 
@@ -49,6 +50,7 @@ Output: `dist\snapchat-memories-downloader-windows\`
 git clone https://github.com/shoeless03/snapchat-memory-downloader.git
 cd snapchat-memory-downloader
 git checkout packaging
+cd tools/build
 chmod +x build-unix.sh
 ./build-unix.sh
 ```
@@ -62,6 +64,7 @@ If the scripts don't work, build manually:
 ### 1. Install Dependencies
 
 ```bash
+cd tools/build
 pip install -r requirements-build.txt
 ```
 
@@ -75,19 +78,19 @@ pyinstaller snapchat-memories.spec
 
 **Windows:**
 ```cmd
-mkdir dist\snapchat-memories-downloader-windows
-copy dist\snapchat-memories-downloader.exe dist\snapchat-memories-downloader-windows\
-copy README-DISTRIBUTION.md dist\snapchat-memories-downloader-windows\README.md
-xcopy /s licenses dist\snapchat-memories-downloader-windows\licenses\
+mkdir ..\..\dist\snapchat-memories-downloader-windows
+copy ..\..\dist\snapchat-memories-downloader.exe ..\..\dist\snapchat-memories-downloader-windows\
+copy ..\..\docs\README-DISTRIBUTION.md ..\..\dist\snapchat-memories-downloader-windows\README.md
+xcopy /s ..\..\docs\licenses ..\..\dist\snapchat-memories-downloader-windows\licenses\
 ```
 
 **macOS/Linux:**
 ```bash
-mkdir -p dist/snapchat-memories-downloader-{platform}
-cp dist/snapchat-memories-downloader dist/snapchat-memories-downloader-{platform}/
-cp README-DISTRIBUTION.md dist/snapchat-memories-downloader-{platform}/README.md
-cp -r licenses dist/snapchat-memories-downloader-{platform}/
-chmod +x dist/snapchat-memories-downloader-{platform}/snapchat-memories-downloader
+mkdir -p ../../dist/snapchat-memories-downloader-{platform}
+cp ../../dist/snapchat-memories-downloader ../../dist/snapchat-memories-downloader-{platform}/
+cp ../../docs/README-DISTRIBUTION.md ../../dist/snapchat-memories-downloader-{platform}/README.md
+cp -r ../../docs/licenses ../../dist/snapchat-memories-downloader-{platform}/
+chmod +x ../../dist/snapchat-memories-downloader-{platform}/snapchat-memories-downloader
 ```
 
 Replace `{platform}` with `macos` or `linux`.
@@ -260,8 +263,8 @@ Example GitHub Actions workflow available in separate documentation.
 | Linux    | Linux    | snapchat-memories-downloader | (none) |
 
 **Build Command:**
-- Windows: `build-windows.bat`
-- macOS/Linux: `./build-unix.sh`
+- Windows: `cd tools\build && build-windows.bat`
+- macOS/Linux: `cd tools/build && ./build-unix.sh`
 
 **Test Command:**
 ```bash

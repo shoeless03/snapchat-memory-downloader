@@ -14,7 +14,7 @@ pip3 install -r requirements-build.txt
 # Clean previous builds
 echo ""
 echo "Cleaning previous builds..."
-rm -rf build dist
+rm -rf ../../build ../../dist
 
 # Build with PyInstaller
 echo ""
@@ -31,16 +31,16 @@ fi
 # Create distribution folder
 echo ""
 echo "Creating distribution package..."
-mkdir -p "dist/snapchat-memories-downloader-${PLATFORM}"
-cp "dist/snapchat-memories-downloader" "dist/snapchat-memories-downloader-${PLATFORM}/"
-cp "README-DISTRIBUTION.md" "dist/snapchat-memories-downloader-${PLATFORM}/README.md"
-cp -r "licenses" "dist/snapchat-memories-downloader-${PLATFORM}/"
+mkdir -p "../../dist/snapchat-memories-downloader-${PLATFORM}"
+cp "../../dist/snapchat-memories-downloader" "../../dist/snapchat-memories-downloader-${PLATFORM}/"
+cp "../../docs/README-DISTRIBUTION.md" "../../dist/snapchat-memories-downloader-${PLATFORM}/README.md"
+cp -r "../../docs/licenses" "../../dist/snapchat-memories-downloader-${PLATFORM}/"
 
 # Make executable
-chmod +x "dist/snapchat-memories-downloader-${PLATFORM}/snapchat-memories-downloader"
+chmod +x "../../dist/snapchat-memories-downloader-${PLATFORM}/snapchat-memories-downloader"
 
 echo ""
 echo "============================================"
 echo "Build complete!"
-echo "Output: dist/snapchat-memories-downloader-${PLATFORM}/"
+echo "Output: ../../dist/snapchat-memories-downloader-${PLATFORM}/"
 echo "============================================"
