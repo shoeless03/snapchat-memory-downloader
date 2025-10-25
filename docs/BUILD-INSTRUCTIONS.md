@@ -18,6 +18,9 @@ PyInstaller creates platform-specific binaries that include Python and all depen
 - pip package manager
 - Git (to clone/manage the repository)
 
+### Development & Testing (Optional)
+- pytest (for running tests): `pip install -r requirements-test.txt`
+
 ### Platform-Specific
 
 **Windows:**
@@ -140,7 +143,34 @@ Typical executable sizes:
 - **macOS:** ~15-20 MB
 - **Linux:** ~15-20 MB
 
-## Testing Builds
+## Testing
+
+### Running Unit Tests
+
+Before building, run the test suite to verify functionality:
+
+```bash
+# Install test dependencies
+pip install -r requirements-test.txt
+
+# Run all tests
+pytest
+
+# Run with verbose output
+pytest -v
+
+# Run with coverage report
+pytest --cov=scripts --cov-report=html
+```
+
+**Test Results:**
+- ✅ 138+ tests should pass
+- ⏭️ 4-6 tests may be skipped (platform-specific)
+- ❌ 0 tests should fail
+
+See [TESTING.md](../TESTING.md) for detailed testing documentation.
+
+### Testing Builds
 
 Before distributing, test the executable:
 

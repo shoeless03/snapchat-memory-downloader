@@ -1,56 +1,77 @@
 #!/usr/bin/env python3
-"""Test GPS metadata on one file."""
+"""
+Integration test for GPS metadata functionality.
+
+This is a manual integration test that should be run with actual data.
+It is skipped during automated test runs.
+"""
 
 import sys
 from pathlib import Path
+import pytest
 
 # Add scripts directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent / 'scripts'))
 
-from downloader import SnapchatDownloader
+from metadata import parse_location, add_gps_metadata
+from snap_parser import parse_html_file
 
-# Create downloader
-dl = SnapchatDownloader('data from snapchat/html/memories_history.html', 'memories')
 
-# Parse HTML
-memories = dl.parse_html()
+@pytest.mark.skip(reason="Manual integration test - requires actual data files")
+def test_gps_metadata_integration():
+    """Manual integration test for GPS metadata.
 
-# Find first memory with location that's already downloaded
-for memory in memories[:20]:
-    sid = memory['sid']
+    To run this test:
+    1. Ensure you have actual memories downloaded
+    2. Run with: pytest tests/test_gps.py -v -s
+    """
+    html_file = 'data from snapchat/html/memories_history.html'
+    output_dir = Path('memories')
 
-    if sid not in dl.progress['downloaded']:
-        continue
+    if not Path(html_file).exists():
+        pytest.skip("HTML file not found")
 
-    if 'location' not in memory or not memory['location']:
-        continue
+    # Parse HTML
+    memories = parse_html_file(html_file)
 
-    print(f"Testing with: {memory['date']} - {memory['media_type']}")
-    print(f"Location: {memory['location']}")
+    # Find first memory with location
+    for memory in memories[:20]:
+        sid = memory['sid']
 
-    # Test parsing
-    coords = dl._parse_location(memory)
-    if coords:
-        print(f"Parsed coordinates: {coords}")
+        if 'location' not in memory or not memory['location']:
+            continue
 
-        # Find the actual file
-        for subdir in ['images', 'videos']:
-            dir_path = Path('memories') / subdir
-            if dir_path.exists():
-                for file in dir_path.glob(f"*{sid[:8]}*"):
-                    if 'overlay' not in file.name:
-                        print(f"Found file: {file}")
-                        print("Attempting to add GPS metadata...")
+        print(f"\nTesting with: {memory['date']} - {memory['media_type']}")
+        print(f"Location: {memory['location']}")
 
-                        try:
-                            dl._add_gps_metadata(file, memory)
-                            print("[SUCCESS] GPS metadata added!")
-                        except Exception as e:
-                            print(f"[ERROR] {e}")
+        # Test parsing
+        coords = parse_location(memory)
+        if coords:
+            print(f"Parsed coordinates: {coords}")
 
-                        break
-            break
-    else:
-        print("Failed to parse coordinates")
+            # Find the actual file
+            for subdir in ['images', 'videos']:
+                dir_path = output_dir / subdir
+                if dir_path.exists():
+                    for file in dir_path.glob(f"*{sid[:8]}*"):
+                        if 'overlay' not in file.name:
+                            print(f"Found file: {file}")
+                            print("Attempting to add GPS metadata...")
 
-    break
+                            try:
+                                add_gps_metadata(file, memory, has_exiftool=True)
+                                print("[SUCCESS] GPS metadata added!")
+                            except Exception as e:
+                                print(f"[ERROR] {e}")
+
+                            break
+                break
+        else:
+            print("Failed to parse coordinates")
+
+        break
+
+
+if __name__ == '__main__':
+    # Allow running directly for manual testing
+    test_gps_metadata_integration()

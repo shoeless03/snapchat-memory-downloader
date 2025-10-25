@@ -1,0 +1,31 @@
+# Testing dependencies for Snapchat Memories Downloader
+
+# Core testing framework
+pytest>=7.4.0
+
+# Test coverage
+pytest-cov>=4.1.0
+
+# Mocking utilities
+pytest-mock>=3.11.0
+
+# For testing async code (if needed in future)
+pytest-asyncio>=0.21.0
+
+# For cleaner test output
+pytest-sugar>=0.9.7
+
+# For testing with different Python versions (optional)
+tox>=4.6.0
+
+# For testing fixtures and data
+Faker>=19.0.0
+
+# Additional assertion helpers
+pytest-check>=2.2.0
+
+# For HTML test reports (optional)
+pytest-html>=3.2.0
+
+# For parallel test execution (optional)
+pytest-xdist>=3.3.0
