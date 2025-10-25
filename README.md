@@ -37,7 +37,7 @@ This tool automatically downloads all your Snapchat memories (photos and videos)
 ## Prerequisites
 
 ### Required
-- **Python 3.7+** - [Download Python](https://www.python.org/downloads/)
+- **Python 3.11+** - [Download Python](https://www.python.org/downloads/)
 - **requests library** - Install with: `pip install requests`
 
 ### Optional Dependencies
