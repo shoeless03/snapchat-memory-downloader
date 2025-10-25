@@ -18,6 +18,9 @@ PyInstaller creates platform-specific binaries that include Python and all depen
 - pip package manager
 - Git (to clone/manage the repository)
 
+### Development & Testing (Optional)
+- pytest (for running tests): `pip install -r requirements-test.txt`
+
 ### Platform-Specific
 
 **Windows:**
@@ -38,6 +41,7 @@ PyInstaller creates platform-specific binaries that include Python and all depen
 git clone https://github.com/shoeless03/snapchat-memory-downloader.git
 cd snapchat-memory-downloader
 git checkout packaging
+cd tools\build
 build-windows.bat
 ```
 
@@ -49,6 +53,7 @@ Output: `dist\snapchat-memories-downloader-windows\`
 git clone https://github.com/shoeless03/snapchat-memory-downloader.git
 cd snapchat-memory-downloader
 git checkout packaging
+cd tools/build
 chmod +x build-unix.sh
 ./build-unix.sh
 ```
@@ -62,6 +67,7 @@ If the scripts don't work, build manually:
 ### 1. Install Dependencies
 
 ```bash
+cd tools/build
 pip install -r requirements-build.txt
 ```
 
@@ -75,19 +81,19 @@ pyinstaller snapchat-memories.spec
 
 **Windows:**
 ```cmd
-mkdir dist\snapchat-memories-downloader-windows
-copy dist\snapchat-memories-downloader.exe dist\snapchat-memories-downloader-windows\
-copy README-DISTRIBUTION.md dist\snapchat-memories-downloader-windows\README.md
-xcopy /s licenses dist\snapchat-memories-downloader-windows\licenses\
+mkdir ..\..\dist\snapchat-memories-downloader-windows
+copy ..\..\dist\snapchat-memories-downloader.exe ..\..\dist\snapchat-memories-downloader-windows\
+copy ..\..\docs\README-DISTRIBUTION.md ..\..\dist\snapchat-memories-downloader-windows\README.md
+xcopy /s ..\..\docs\licenses ..\..\dist\snapchat-memories-downloader-windows\licenses\
 ```
 
 **macOS/Linux:**
 ```bash
-mkdir -p dist/snapchat-memories-downloader-{platform}
-cp dist/snapchat-memories-downloader dist/snapchat-memories-downloader-{platform}/
-cp README-DISTRIBUTION.md dist/snapchat-memories-downloader-{platform}/README.md
-cp -r licenses dist/snapchat-memories-downloader-{platform}/
-chmod +x dist/snapchat-memories-downloader-{platform}/snapchat-memories-downloader
+mkdir -p ../../dist/snapchat-memories-downloader-{platform}
+cp ../../dist/snapchat-memories-downloader ../../dist/snapchat-memories-downloader-{platform}/
+cp ../../docs/README-DISTRIBUTION.md ../../dist/snapchat-memories-downloader-{platform}/README.md
+cp -r ../../docs/licenses ../../dist/snapchat-memories-downloader-{platform}/
+chmod +x ../../dist/snapchat-memories-downloader-{platform}/snapchat-memories-downloader
 ```
 
 Replace `{platform}` with `macos` or `linux`.
@@ -137,7 +143,34 @@ Typical executable sizes:
 - **macOS:** ~15-20 MB
 - **Linux:** ~15-20 MB
 
-## Testing Builds
+## Testing
+
+### Running Unit Tests
+
+Before building, run the test suite to verify functionality:
+
+```bash
+# Install test dependencies
+pip install -r requirements-test.txt
+
+# Run all tests
+pytest
+
+# Run with verbose output
+pytest -v
+
+# Run with coverage report
+pytest --cov=scripts --cov-report=html
+```
+
+**Test Results:**
+- ✅ 138+ tests should pass
+- ⏭️ 4-6 tests may be skipped (platform-specific)
+- ❌ 0 tests should fail
+
+See [TESTING.md](../TESTING.md) for detailed testing documentation.
+
+### Testing Builds
 
 Before distributing, test the executable:
 
@@ -260,8 +293,8 @@ Example GitHub Actions workflow available in separate documentation.
 | Linux    | Linux    | snapchat-memories-downloader | (none) |
 
 **Build Command:**
-- Windows: `build-windows.bat`
-- macOS/Linux: `./build-unix.sh`
+- Windows: `cd tools\build && build-windows.bat`
+- macOS/Linux: `cd tools/build && ./build-unix.sh`
 
 **Test Command:**
 ```bash
