@@ -15,7 +15,20 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=[
+        'tkinter',           # GUI library not needed
+        'matplotlib',        # Plotting library not needed
+        'scipy',             # Scientific computing not needed
+        'numpy',             # Large library, not directly used
+        'pandas',            # Data analysis not needed
+        'IPython',           # Interactive shell not needed
+        'jupyter',           # Notebook not needed
+        'notebook',          # Jupyter notebook not needed
+        'pytest',            # Testing framework not needed
+        'setuptools',        # Build tools not needed at runtime
+        'pip',               # Package installer not needed at runtime
+        'wheel',             # Package format not needed at runtime
+    ],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,
