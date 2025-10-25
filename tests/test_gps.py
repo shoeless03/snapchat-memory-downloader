@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 """Test GPS metadata on one file."""
 
-from download_snapchat_memories import SnapchatDownloader
+import sys
 from pathlib import Path
+
+# Add scripts directory to path
+sys.path.insert(0, str(Path(__file__).parent.parent / 'scripts'))
+
+from downloader import SnapchatDownloader
 
 # Create downloader
 dl = SnapchatDownloader('data from snapchat/html/memories_history.html', 'memories')
