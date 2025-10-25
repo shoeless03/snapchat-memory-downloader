@@ -14,7 +14,7 @@ download_snapchat_memories.py (or snapchat-memories-downloader.exe from releases
 
 
 snapchat gives the original video/image and the overlay, this scipt doesn't remove them, just origanizes them.
-You can re-create the effect with the --apply-overlays flag (see below) to create new images/vidoes (leaving original untouched) in a new folder.
+You can re-create the effect with the --apply-overlays flag (see below) to create new images/vidoes with the snapchat overlay embedded (leaving original untouched) in a new folder.
 
 
 see below for futher usage.
