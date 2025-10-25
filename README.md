@@ -26,7 +26,7 @@ Download the latest release for your platform:
 **What's bundled:** Python + core libraries (requests, Pillow, pywin32)
 **Optional downloads:** FFmpeg (video overlays) and ExifTool (GPS metadata) - see below
 
-*RECOMMENDED:*
+###RECOMMENDED:
 **Or install from source** (requires Python 3.11+):
 ```bash
 git clone https://github.com/shoeless03/snapchat-memory-downloader.git
