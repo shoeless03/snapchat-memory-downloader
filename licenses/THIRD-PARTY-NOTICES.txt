@@ -1,0 +1,43 @@
+THIRD-PARTY SOFTWARE NOTICES AND INFORMATION
+
+This software incorporates components from the projects listed below. The original
+copyright notices and the licenses under which we received such components are set
+forth below. We reserve all rights not expressly granted herein, whether by
+implication, estoppel or otherwise.
+
+================================================================================
+
+1. requests - Apache License 2.0
+   https://github.com/psf/requests
+   Copyright 2019 Kenneth Reitz
+   See: LICENSE-requests.txt
+
+2. Pillow - HPND License
+   https://github.com/python-pillow/Pillow
+   Copyright © 1997-2011 by Secret Labs AB
+   Copyright © 1995-2011 by Fredrik Lundh
+   Copyright © 2010-2024 by Jeffrey A. Clark (Alex) and contributors
+   See: LICENSE-Pillow.txt
+
+3. pywin32 - PSF License (Windows only)
+   https://github.com/mhammond/pywin32
+   Copyright (c) 1996-2008, Greg Stein and Mark Hammond
+   See: LICENSE-pywin32.txt
+
+================================================================================
+
+OPTIONAL DEPENDENCIES (NOT BUNDLED)
+
+The following software is recommended but not included in this distribution:
+
+4. FFmpeg - LGPL 2.1+ (or GPL depending on build configuration)
+   https://ffmpeg.org
+   Required for video overlay compositing
+   Users must download separately from https://ffmpeg.org
+
+5. ExifTool - Artistic License 2.0 or GPL
+   https://exiftool.org
+   Optional for GPS/EXIF metadata copying
+   Users must download separately from https://exiftool.org
+
+================================================================================
