@@ -6,11 +6,8 @@ This assumes you've exported your data and they sent you something like my_data_
 
 Recommended you create a new folder and place this whole repo inside.
 
-change that folder name to "data from snapchat" and download_snapchat_memories.py should be at the same level as the folder you downloaded and renamed.
+change that folder name to "data from snapchat" and download_snapchat_memories.py (or snapchat-memories-downloader.exe from releases) should be at the same level as the folder you downloaded and renamed.
 
-You can figure it out from there right? 
-
-;] 
 
 see below for futher usage.
 
