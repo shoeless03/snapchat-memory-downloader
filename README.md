@@ -4,7 +4,7 @@ This assumes you've exported your data and they sent you something like my_data_
 
 Recommended you 
 - create a new folder and place this whole repo inside
-  - (FOR EACH EXPORT!!! IDK what will happen if you replace the html with a newly exported html! it should never delete files but i don't recommend this!)
+  - (FOR EACH EXPORT!!! IDK what will happen if you replace the html with a newly exported html! it should never delete files but i don't recommend this! until further testing done.)
 - move the folder from snapchat (after extracting zip) into same folder.
 - change that folder (my_data_blah blah folder) name to "data from snapchat".
 
