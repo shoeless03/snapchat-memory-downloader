@@ -109,13 +109,15 @@ class ProgressTracker:
 
         Args:
             sid: Session ID
-            memory: Memory dictionary with date and media_type
+            memory: Memory dictionary with date, media_type, and location
         """
         self.progress['downloaded'][sid] = {
             'date': memory['date'],  # Always UTC
             'media_type': memory['media_type'],
+            'location': memory.get('location', ''),  # GPS coordinates (lat, long)
             'timestamp': datetime.now().isoformat(),
-            'timezone_converted': False,  # Track if converted to local timezone
+            'current_timezone': 'UTC',  # Track which timezone the filename is currently in
+            'timezone_converted': False,  # Track if converted from UTC
             'local_date': None  # Will be set when timezone is converted
         }
 
@@ -320,6 +322,46 @@ class ProgressTracker:
         if sid in self.progress['downloaded']:
             return self.progress['downloaded'][sid].get('local_date')
         return None
+
+    def get_location(self, sid: str) -> str:
+        """Get the GPS coordinates for a SID.
+
+        Args:
+            sid: Session ID
+
+        Returns:
+            Location string (latitude, longitude) or empty string
+        """
+        if sid in self.progress['downloaded']:
+            return self.progress['downloaded'][sid].get('location', '')
+        return ''
+
+    def get_current_timezone(self, sid: str) -> str:
+        """Get the current timezone the file is named in.
+
+        Args:
+            sid: Session ID
+
+        Returns:
+            Timezone name (e.g., 'UTC', 'America/New_York') or 'UTC' as default
+        """
+        if sid in self.progress['downloaded']:
+            return self.progress['downloaded'][sid].get('current_timezone', 'UTC')
+        return 'UTC'
+
+    def update_current_timezone(self, sid: str, timezone: str, local_date: str):
+        """Update the timezone that the file is currently named in.
+
+        Args:
+            sid: Session ID
+            timezone: Timezone name (e.g., 'America/New_York')
+            local_date: Date/time in the new timezone
+        """
+        if sid in self.progress['downloaded']:
+            self.progress['downloaded'][sid]['current_timezone'] = timezone
+            self.progress['downloaded'][sid]['timezone_converted'] = (timezone != 'UTC')
+            self.progress['downloaded'][sid]['local_date'] = local_date
+            self.save_progress()
 
     def verify_downloads(self, memories: List[Dict]) -> Dict:
         """Verify all downloads are complete.

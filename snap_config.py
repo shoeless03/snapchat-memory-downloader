@@ -61,12 +61,27 @@ def check_ffmpeg() -> bool:
     return shutil.which('ffmpeg') is not None
 
 
+def check_timezone_lookup() -> bool:
+    """Check if timezone lookup libraries are available.
+
+    Returns:
+        True if both timezonefinder and pytz are installed
+    """
+    try:
+        import timezonefinder
+        import pytz
+        return True
+    except ImportError:
+        return False
+
+
 def check_dependencies():
     """Check for optional dependencies and prompt user."""
     has_exiftool = check_exiftool()
     has_pywin32 = check_pywin32()
     has_pillow, has_pillow_simd = check_pillow()
     has_ffmpeg = check_ffmpeg()
+    has_timezone_lookup = check_timezone_lookup()
 
     # Display dependency status
     missing_features = []
@@ -82,6 +97,9 @@ def check_dependencies():
 
     if not has_ffmpeg:
         missing_features.append(("FFmpeg", "compositing overlays onto videos"))
+
+    if not has_timezone_lookup:
+        missing_features.append(("timezonefinder + pytz", "GPS-based timezone conversion"))
 
     if missing_features:
         print("\n" + "="*70)
@@ -116,6 +134,11 @@ def check_dependencies():
             print("    - Linux:   sudo apt install ffmpeg")
             print("    - macOS:   brew install ffmpeg")
 
+        if not has_timezone_lookup:
+            print("\n  Timezone Lookup (timezonefinder + pytz):")
+            print("    - All platforms: pip install timezonefinder pytz")
+            print("      (Required for GPS-based timezone conversion)")
+
         print("\nWhat would you like to do?")
         print("  1. Continue without these features")
         print("  2. Quit to install dependencies (recommended)")
@@ -134,6 +157,8 @@ def check_dependencies():
                         print("  - Image overlays will NOT be composited")
                     if not has_ffmpeg:
                         print("  - Video overlays will NOT be composited")
+                    if not has_timezone_lookup:
+                        print("  - GPS-based timezone conversion will NOT be available (falls back to system timezone)")
                     print("\nNOTE: You can install these dependencies later and re-run the script")
                     print("      to add GPS data, update timestamps, and composite overlays on your existing files.")
                     print()
@@ -159,4 +184,5 @@ def check_dependencies():
             print("  [TIP] For 5x faster compositing, install pillow-simd:")
             print("        pip uninstall Pillow && pip install pillow-simd")
         print("  [OK] FFmpeg: Video overlays can be composited")
+        print("  [OK] Timezone Lookup: GPS-based timezone conversion available")
         print("="*70 + "\n")

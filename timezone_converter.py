@@ -1,13 +1,20 @@
 """
 Timezone conversion utilities for Snapchat memories.
 
-Converts file timestamps and filenames from UTC to local timezone.
+Converts file timestamps and filenames from UTC to local or GPS-based timezone.
 """
 
 import os
 from pathlib import Path
 from datetime import datetime, timezone
 from typing import Tuple, Optional
+
+# Try to import timezone lookup libraries
+try:
+    import pytz
+    HAS_PYTZ = True
+except ImportError:
+    HAS_PYTZ = False
 
 
 def utc_to_local(utc_date_str: str) -> Tuple[datetime, str]:
@@ -35,8 +42,46 @@ def utc_to_local(utc_date_str: str) -> Tuple[datetime, str]:
     return local_dt, local_str
 
 
-def generate_local_filename(utc_date_str: str, media_type: str, sid_short: str, extension: str, suffix: str = "") -> str:
-    """Generate filename with local timezone.
+def utc_to_timezone(utc_date_str: str, timezone_name: str) -> Tuple[datetime, str]:
+    """Convert UTC date string to specified timezone.
+
+    Args:
+        utc_date_str: Date string in format "YYYY-MM-DD HH:MM:SS UTC"
+        timezone_name: Timezone name (e.g., 'America/New_York') or 'system' for local
+
+    Returns:
+        Tuple of (datetime object in target timezone, formatted string)
+    """
+    # If timezone is 'system', use local timezone
+    if timezone_name == 'system':
+        return utc_to_local(utc_date_str)
+
+    # Parse UTC date string
+    date_str = utc_date_str.replace(' UTC', '')
+    utc_dt = datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
+
+    if HAS_PYTZ:
+        # Use pytz for proper timezone conversion
+        utc_tz = pytz.UTC
+        utc_dt = utc_tz.localize(utc_dt)
+
+        # Convert to target timezone
+        target_tz = pytz.timezone(timezone_name)
+        local_dt = utc_dt.astimezone(target_tz)
+
+        # Format as string
+        local_str = local_dt.strftime('%Y-%m-%d %H:%M:%S') + f' {timezone_name}'
+    else:
+        # Fallback to system timezone if pytz not available
+        utc_dt = utc_dt.replace(tzinfo=timezone.utc)
+        local_dt = utc_dt.astimezone()
+        local_str = local_dt.strftime('%Y-%m-%d %H:%M:%S') + f' {local_dt.tzname()}'
+
+    return local_dt, local_str
+
+
+def generate_local_filename(utc_date_str: str, media_type: str, sid_short: str, extension: str, suffix: str = "", timezone_name: Optional[str] = None) -> str:
+    """Generate filename with local or specified timezone.
 
     Args:
         utc_date_str: Date string in format "YYYY-MM-DD HH:MM:SS UTC"
@@ -44,11 +89,15 @@ def generate_local_filename(utc_date_str: str, media_type: str, sid_short: str, 
         sid_short: First 8 characters of SID
         extension: File extension (without dot)
         suffix: Optional suffix like "_overlay" or "_composited"
+        timezone_name: Optional timezone name (e.g., 'America/New_York'). If None, uses system local timezone.
 
     Returns:
         Filename in format: YYYY-MM-DD_HHMMSS_Type_sidXXXXXXXX{suffix}.ext
     """
-    local_dt, _ = utc_to_local(utc_date_str)
+    if timezone_name:
+        local_dt, _ = utc_to_timezone(utc_date_str, timezone_name)
+    else:
+        local_dt, _ = utc_to_local(utc_date_str)
 
     date_part = local_dt.strftime('%Y-%m-%d')
     time_part = local_dt.strftime('%H%M%S')
@@ -85,15 +134,20 @@ def parse_filename_for_sid(filename: str) -> Optional[str]:
     return None
 
 
-def convert_file_timestamps_to_local(file_path: Path, utc_date_str: str, has_pywin32: bool = False):
-    """Update file modification and creation times to local timezone.
+def convert_file_timestamps_to_local(file_path: Path, utc_date_str: str, has_pywin32: bool = False, timezone_name: Optional[str] = None):
+    """Update file modification and creation times to local or specified timezone.
 
     Args:
         file_path: Path to file
         utc_date_str: Original UTC date string
         has_pywin32: Whether pywin32 is available (Windows only)
+        timezone_name: Optional timezone name (e.g., 'America/New_York'). If None, uses system local timezone.
     """
-    local_dt, _ = utc_to_local(utc_date_str)
+    if timezone_name:
+        local_dt, _ = utc_to_timezone(utc_date_str, timezone_name)
+    else:
+        local_dt, _ = utc_to_local(utc_date_str)
+
     local_timestamp = local_dt.timestamp()
 
     # Set modification time (works on all platforms)

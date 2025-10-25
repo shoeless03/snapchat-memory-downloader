@@ -137,7 +137,7 @@ python download_snapchat_memories.py --html "path/to/memories_history.html" \
 - `--rebuild-cache`: Force rebuild of overlay pairs cache
 
 **Timezone Conversion Options:**
-- `--convert-timezone`: Convert all file timestamps and filenames from UTC to local timezone (safe to run multiple times, skips already converted files)
+- `--convert-timezone`: Convert all file timestamps and filenames from UTC to GPS-based timezone (safe to run multiple times, skips already converted files)
 
 ## Features
 
@@ -187,15 +187,22 @@ python download_snapchat_memories.py --html "path/to/memories_history.html" \
 
 ### Timezone Conversion
 
-By default, all files are downloaded with UTC timestamps (matching Snapchat's format). You can convert all timestamps and filenames to your local timezone.
+**NEW FEATURE:** The script now uses GPS coordinates to automatically determine the correct timezone for each memory!
+
+By default, all files are downloaded with UTC timestamps (matching Snapchat's format). You can convert all timestamps and filenames to the timezone where the photo/video was actually taken.
 
 **How it works:**
-1. Reads UTC dates from `download_progress.json` for each file
-2. Converts timestamps to your system's local timezone
-3. Renames files to use local time in filenames
-4. Updates file modification/creation times to local time
-5. Tracks conversion status to avoid duplicate conversions
-6. Preserves UTC dates in progress file for reference
+1. Reads UTC dates and GPS coordinates from `download_progress.json` for each file
+2. Uses GPS coordinates to lookup the timezone where the memory was taken (e.g., 'America/New_York', 'Europe/Paris')
+3. Falls back to system timezone for memories without GPS data
+4. Renames files to use the determined timezone in filenames
+5. Updates file modification/creation times to match
+6. Tracks conversion status and current timezone in progress file
+7. Preserves UTC dates in progress file for reference
+
+**Requirements:**
+- **GPS-based timezone lookup**: `timezonefinder` + `pytz` (install: `pip install timezonefinder pytz`)
+- Without these libraries, the script falls back to system timezone (like before)
 
 **Usage:**
 ```bash
@@ -208,19 +215,33 @@ python download_snapchat_memories.py --convert-timezone
 - All overlays in `memories/overlays/`
 - All composited files in `memories/composited/images/` and `memories/composited/videos/`
 
-**Example:**
+**Example (with GPS-based timezone):**
+```
+Memory taken in New York (GPS: 40.7128, -74.0060):
 - Before: `2025-10-16_194703_Image_9ce001ca.jpg` (UTC: 7:47 PM)
-- After: `2025-10-16_124703_Image_9ce001ca.jpg` (EST: 12:47 PM, assuming EST timezone)
+- After: `2025-10-16_144703_Image_9ce001ca.jpg` (EDT: 2:47 PM)
+
+Memory taken in Los Angeles (GPS: 34.0522, -118.2437):
+- Before: `2025-10-16_194703_Image_9ce001ca.jpg` (UTC: 7:47 PM)
+- After: `2025-10-16_124703_Image_9ce001ca.jpg` (PDT: 12:47 PM)
+```
+
+**Example (without GPS data - fallback to system timezone):**
+- Before: `2025-10-16_194703_Image_9ce001ca.jpg` (UTC: 7:47 PM)
+- After: `2025-10-16_144703_Image_9ce001ca.jpg` (System timezone)
 
 **Progress tracking:**
 The `download_progress.json` file is updated to track:
-- `timezone_converted`: Whether the file has been converted
-- `local_date`: The date/time in your local timezone
-- `date`: Original UTC date (preserved for reference)
+- `timezone_converted`: Whether the file has been converted from UTC
+- `current_timezone`: Which timezone the file is currently named in (e.g., 'UTC', 'America/New_York', or 'system')
+- `local_date`: The date/time in the current timezone
+- `location`: GPS coordinates (latitude, longitude) for GPS-based timezone lookup
+- `date`: Original UTC date (always preserved for reference)
 
 **Safety:**
 - Safe to run multiple times - skips already converted files
-- Original UTC dates preserved in progress file
+- Original UTC dates always preserved in progress file
+- GPS coordinates stored for future re-conversions if needed
 - Can be undone by re-downloading files (they'll be UTC again)
 
 ### File Naming Convention
@@ -430,8 +451,16 @@ The script dynamically counts and reports:
 
 ## Recent Updates
 
+### v1.3.0 - GPS-Based Timezone Conversion
+- ✅ **NEW:** GPS-based timezone conversion using coordinates from each memory
+- ✅ Automatically determines correct timezone (e.g., 'America/New_York') from GPS data
+- ✅ Falls back to system timezone for memories without GPS coordinates
+- ✅ Stores GPS coordinates and current timezone in progress file
+- ✅ Requires `timezonefinder` + `pytz` libraries (optional, falls back gracefully)
+- ✅ Files converted to the timezone where they were actually taken
+
 ### v1.2.0 - Timezone Conversion
-- ✅ New `--convert-timezone` command to convert all files from UTC to local timezone
+- ✅ New `--convert-timezone` command to convert all files from UTC
 - ✅ Converts both filenames and file timestamps
 - ✅ Tracks conversion status in progress file
 - ✅ Preserves original UTC dates for reference
