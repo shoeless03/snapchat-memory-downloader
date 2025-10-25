@@ -66,11 +66,13 @@ snapchat-memories-downloader --convert-timezone
 
 **For overlay compositing on videos:**
 - Download FFmpeg from https://ffmpeg.org
-- Add to your system PATH
+- **Option A:** Add to your system PATH (recommended)
+- **Option B:** Place `ffmpeg.exe` in the same folder as the downloader
 
 **For GPS/EXIF metadata preservation:**
 - Download ExifTool from https://exiftool.org
-- Add to your system PATH
+- **Option A:** Add to your system PATH (recommended)
+- **Option B:** Place `exiftool.exe` in the same folder as the downloader
 
 ## Command-line Options
 
