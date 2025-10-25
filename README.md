@@ -395,6 +395,8 @@ For detailed information, see [CLAUDE.md](CLAUDE.md) which includes:
 
 ## License
 
+MIT License - see [LICENSE](LICENSE) file for details.
+
 This project is provided as-is for personal use to download your own Snapchat memories.
 
 ## Pre-built Executables
