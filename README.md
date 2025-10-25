@@ -2,9 +2,12 @@
 I am not a bot but the rest of this is. Created with that claude fucker.
 This assumes you've exported your data and they sent you something like my_data_blah blah folder (after extracting zip) with html in it.
 
-Recommended you create a new folder and place this whole repo inside. 
-move the folder from snapchat (after extracting zip) into same folder.
-change that folder name to "data from snapchat".
+Recommended you 
+- create a new folder and place this whole repo inside. 
+- move the folder from snapchat (after extracting zip) into same folder.
+- change that folder (my_data_blah blah folder) name to "data from snapchat".
+
+
 
 download_snapchat_memories.py (or snapchat-memories-downloader.exe from releases) should be at the same level as the folder you downloaded and renamed.
 
