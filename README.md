@@ -18,6 +18,26 @@ End human.
 
 claude wants coffee tho: [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/X8X21N8LO2)
 
+## Download
+
+**Pre-built executables available** - No Python installation required!
+
+Download the latest release for your platform:
+- [**Windows**](../../releases/latest) - `snapchat-memories-downloader.exe` (~20MB)
+- [**macOS**](../../releases/latest) - Coming soon
+- [**Linux**](../../releases/latest) - Coming soon
+
+**What's bundled:** Python + core libraries (requests, Pillow, pywin32)
+**Optional downloads:** FFmpeg (video overlays) and ExifTool (GPS metadata) - see below
+
+**Or install from source** (requires Python 3.11+):
+```bash
+git clone https://github.com/shoeless03/snapchat-memory-downloader.git
+cd snapchat-memory-downloader
+pip install requests
+python download_snapchat_memories.py
+```
+
 ## Overview
 
 This tool automatically downloads all your Snapchat memories (photos and videos) from the HTML export file, organizing them with human-readable filenames and preserving the original creation timestamps.
@@ -376,6 +396,27 @@ For detailed information, see [CLAUDE.md](CLAUDE.md) which includes:
 ## License
 
 This project is provided as-is for personal use to download your own Snapchat memories.
+
+## Pre-built Executables
+
+Pre-built executables are available for download in [Releases](../../releases/latest).
+
+**Benefits:**
+- No Python installation required
+- No dependency management
+- All libraries bundled
+- Just download and run
+
+**What's included:**
+- The complete application
+- All required Python libraries (requests, Pillow, pywin32)
+- Third-party licenses and attribution
+
+**What's NOT included (optional):**
+- FFmpeg (for video overlay compositing) - [Download separately](https://ffmpeg.org)
+- ExifTool (for GPS metadata) - [Download separately](https://exiftool.org)
+
+See [BUILD-INSTRUCTIONS.md](BUILD-INSTRUCTIONS.md) for building from source.
 
 ## Contributing
 
