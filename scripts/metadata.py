@@ -121,13 +121,10 @@ def add_gps_metadata(file_path: Path, memory: Dict, has_exiftool: bool):
 
     # Use exiftool for all media types (images and videos)
     try:
-        # Find exiftool
-        exiftool_local = Path(__file__).parent / 'exiftool-13.39_64' / 'exiftool(-k).exe'
-        if exiftool_local.exists():
-            exiftool_cmd = str(exiftool_local)
-        elif shutil.which('exiftool') is not None:
-            exiftool_cmd = 'exiftool'
-        else:
+        # Find exiftool using the config helper
+        from snap_config import get_exiftool_path
+        exiftool_cmd = get_exiftool_path()
+        if not exiftool_cmd:
             return
 
         # Format GPS coordinates for exiftool
@@ -162,13 +159,10 @@ def copy_metadata_with_exiftool(source_file: Path, dest_file: Path, has_exiftool
         return
 
     try:
-        # Find exiftool
-        exiftool_local = Path(__file__).parent / 'exiftool-13.39_64' / 'exiftool(-k).exe'
-        if exiftool_local.exists():
-            exiftool_cmd = str(exiftool_local)
-        elif shutil.which('exiftool') is not None:
-            exiftool_cmd = 'exiftool'
-        else:
+        # Find exiftool using the config helper
+        from snap_config import get_exiftool_path
+        exiftool_cmd = get_exiftool_path()
+        if not exiftool_cmd:
             return
 
         # Copy all metadata from source to dest

@@ -8,17 +8,36 @@ import shutil
 from pathlib import Path
 
 
-def check_exiftool() -> bool:
-    """Check if ExifTool is available."""
-    script_dir = Path(__file__).parent
+def get_exiftool_path() -> str | None:
+    """Get the path to ExifTool if available.
+
+    Returns:
+        Path to exiftool executable, or None if not found
+    """
+    # Get project root (parent of scripts/)
+    project_root = Path(__file__).parent.parent
+    exiftool_dir = project_root / 'tools' / 'exiftool'
 
     # Check different possible locations based on platform
     if platform.system() == 'Windows':
-        exiftool_local = script_dir / 'exiftool-13.39_64' / 'exiftool(-k).exe'
+        # Try both possible names
+        exiftool_local = exiftool_dir / 'exiftool-13.39_64' / 'exiftool.exe'
+        if not exiftool_local.exists():
+            exiftool_local = exiftool_dir / 'exiftool-13.39_64' / 'exiftool(-k).exe'
     else:
-        exiftool_local = script_dir / 'exiftool'
+        exiftool_local = exiftool_dir / 'exiftool'
 
-    return exiftool_local.exists() or shutil.which('exiftool') is not None
+    if exiftool_local.exists():
+        return str(exiftool_local)
+    elif shutil.which('exiftool') is not None:
+        return 'exiftool'
+    else:
+        return None
+
+
+def check_exiftool() -> bool:
+    """Check if ExifTool is available."""
+    return get_exiftool_path() is not None
 
 
 def check_pywin32() -> bool:
@@ -96,7 +115,7 @@ def check_dependencies():
         if not has_exiftool:
             print("\n  ExifTool:")
             print("    - Windows: Download from https://exiftool.org/")
-            print("               Extract to this folder as 'exiftool-13.39_64/'")
+            print("               Extract to 'tools/exiftool/' as 'exiftool-13.39_64/'")
             print("    - Linux:   sudo apt install libimage-exiftool-perl")
             print("    - macOS:   brew install exiftool")
 
