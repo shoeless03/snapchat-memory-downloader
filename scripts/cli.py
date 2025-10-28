@@ -41,7 +41,7 @@ def show_interactive_menu():
     print("\n" + "="*70)
     print("       /\\_/\\    Snapchat Memories Downloader    /\\_/\\")
     print("      ( o.o )        Interactive Menu          ( o.o )")
-    print("       > ^ <                                     > ^ <")
+    print("       > ^ <                                    > ^ <")
     print("="*70)
     print("\nUse [UP]/[DOWN] arrow keys to navigate, [ENTER] to select\n")
 

@@ -33,7 +33,7 @@ claude wants coffee tho: [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](h
 
 ## Download
 
-**Pre-built executables available** - No Python installation required!
+**Pre-built executables available** - No Python installation required! **[New user? Start here!](docs/GETTING-STARTED.md)**
 
 Download the latest release for your platform:
 - [**Windows**](../../releases/latest)
