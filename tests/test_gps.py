@@ -53,7 +53,7 @@ def test_gps_metadata_integration():
             for subdir in ['images', 'videos']:
                 dir_path = output_dir / subdir
                 if dir_path.exists():
-                    for file in dir_path.glob(f"*{sid[:8]}*"):
+                    for file in dir_path.glob(f"*{sid}*"):
                         if 'overlay' not in file.name:
                             print(f"Found file: {file}")
                             print("Attempting to add GPS metadata...")

@@ -42,7 +42,7 @@ This tool automatically downloads all your Snapchat memories (photos and videos)
 **Key Features:**
 - 📁 Organizes files into `images/`, `videos/`, and `overlays/` folders
 - 🎨 **Overlay compositing** - Combine Snapchat overlays (stickers, text, filters) back onto your photos and videos
-- 📅 Human-readable filenames with timestamps (e.g., `2025-10-16_194703_Image_9ce001ca.jpg`)
+- 📅 Human-readable filenames with timestamps (e.g., `2025-10-16_194703_Image_9ce001ca-fa94-94c3-5514-8b5c7c118fb6.jpg`)
 - ⏰ Preserves Snapchat creation dates in file metadata
 - 📍 Automatic GPS coordinate embedding when ExifTool is installed
 - 🔄 Resume capability - tracks progress and skips already-downloaded files
@@ -243,23 +243,23 @@ The script automatically retries rate-limited downloads with exponential backoff
 ```
 memories/
 ├── images/                          # Downloaded base images
-│   └── 2025-10-16_194703_Image_9ce001ca.jpg
+│   └── 2025-10-16_194703_Image_9ce001ca-fa94-94c3-5514-8b5c7c118fb6.jpg
 ├── videos/                          # Downloaded base videos
-│   └── 2025-10-15_223151_Video_9f9eb970.mp4
+│   └── 2025-10-15_223151_Video_9f9eb970-1234-5678-9abc-def012345678.mp4
 ├── overlays/                        # Snapchat overlays (stickers, text, filters)
-│   └── 2025-10-16_194703_Image_9ce001ca_overlay.png
+│   └── 2025-10-16_194703_Image_9ce001ca-fa94-94c3-5514-8b5c7c118fb6_overlay.png
 └── composited/                      # Images/videos with overlays applied
     ├── images/
-    │   └── 2025-10-16_194703_Image_9ce001ca_composited.jpg
+    │   └── 2025-10-16_194703_Image_9ce001ca-fa94-94c3-5514-8b5c7c118fb6_composited.jpg
     └── videos/
-        └── 2025-10-15_223151_Video_9f9eb970_composited.mp4
+        └── 2025-10-15_223151_Video_9f9eb970-1234-5678-9abc-def012345678_composited.mp4
 ```
 
-**Filename format:** `YYYY-MM-DD_HHMMSS_Type_sidXXXXXXXX.ext`
+**Filename format:** `YYYY-MM-DD_HHMMSS_Type_sid.ext`
 - Date with dashes for readability
 - Time in 24-hour format
 - Media type (Image/Video)
-- First 8 characters of Snapchat session ID (unique identifier)
+- Full Snapchat session ID / GUID (unique identifier)
 - Composited files add `_composited` suffix
 
 ## Overlay Compositing

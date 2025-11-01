@@ -35,35 +35,35 @@ def utc_to_local(utc_date_str: str) -> Tuple[datetime, str]:
     return local_dt, local_str
 
 
-def generate_local_filename(utc_date_str: str, media_type: str, sid_short: str, extension: str, suffix: str = "") -> str:
+def generate_local_filename(utc_date_str: str, media_type: str, sid: str, extension: str, suffix: str = "") -> str:
     """Generate filename with local timezone.
 
     Args:
         utc_date_str: Date string in format "YYYY-MM-DD HH:MM:SS UTC"
         media_type: "Image" or "Video"
-        sid_short: First 8 characters of SID
+        sid: Full session ID (GUID)
         extension: File extension (without dot)
         suffix: Optional suffix like "_overlay" or "_composited"
 
     Returns:
-        Filename in format: YYYY-MM-DD_HHMMSS_Type_sidXXXXXXXX{suffix}.ext
+        Filename in format: YYYY-MM-DD_HHMMSS_Type_sid{suffix}.ext
     """
     local_dt, _ = utc_to_local(utc_date_str)
 
     date_part = local_dt.strftime('%Y-%m-%d')
     time_part = local_dt.strftime('%H%M%S')
 
-    return f"{date_part}_{time_part}_{media_type}_{sid_short}{suffix}.{extension}"
+    return f"{date_part}_{time_part}_{media_type}_{sid}{suffix}.{extension}"
 
 
 def parse_filename_for_sid(filename: str) -> Optional[str]:
     """Extract SID from filename.
 
     Args:
-        filename: Filename in format YYYY-MM-DD_HHMMSS_Type_sidXXXXXXXX.ext
+        filename: Filename in format YYYY-MM-DD_HHMMSS_Type_sid.ext
 
     Returns:
-        SID (8 character prefix) or None if not found
+        Full SID (GUID) or None if not found
     """
     try:
         # Remove extension

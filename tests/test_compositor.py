@@ -36,10 +36,12 @@ class TestFindOverlayPairs:
         overlays_dir.mkdir(parents=True)
 
         # Create test files
-        (images_dir / "2023-01-15_143000_Image_abc12345.jpg").write_text("image")
-        (overlays_dir / "2023-01-15_143000_Image_abc12345_overlay.png").write_text("overlay")
-        (videos_dir / "2023-01-15_143000_Video_xyz78901.mp4").write_text("video")
-        (overlays_dir / "2023-01-15_143000_Video_xyz78901_overlay.png").write_text("overlay")
+        sid1 = "9ce001ca-fa94-94c3-5514-8b5c7c118fb6"
+        sid2 = "5b617512-1234-5678-9abc-def012345678"
+        (images_dir / f"2023-01-15_143000_Image_{sid1}.jpg").write_text("image")
+        (overlays_dir / f"2023-01-15_143000_Image_{sid1}_overlay.png").write_text("overlay")
+        (videos_dir / f"2023-01-15_143000_Video_{sid2}.mp4").write_text("video")
+        (overlays_dir / f"2023-01-15_143000_Video_{sid2}_overlay.png").write_text("overlay")
 
         pairs = find_overlay_pairs(output_dir, use_cache=False)
 
@@ -47,13 +49,13 @@ class TestFindOverlayPairs:
 
         # Check image pair
         image_pair = [p for p in pairs if p['media_type'] == 'image'][0]
-        assert image_pair['sid'] == 'abc12345'
-        assert image_pair['base_file'].name == "2023-01-15_143000_Image_abc12345.jpg"
-        assert image_pair['overlay_file'].name == "2023-01-15_143000_Image_abc12345_overlay.png"
+        assert image_pair['sid'] == sid1
+        assert image_pair['base_file'].name == f"2023-01-15_143000_Image_{sid1}.jpg"
+        assert image_pair['overlay_file'].name == f"2023-01-15_143000_Image_{sid1}_overlay.png"
 
         # Check video pair
         video_pair = [p for p in pairs if p['media_type'] == 'video'][0]
-        assert video_pair['sid'] == 'xyz78901'
+        assert video_pair['sid'] == sid2
 
     def test_find_pairs_no_overlays_dir(self, tmp_path):
         """Test when overlays directory doesn't exist."""
@@ -74,7 +76,8 @@ class TestFindOverlayPairs:
         overlays_dir.mkdir(parents=True)
 
         # Create overlay without base
-        (overlays_dir / "2023-01-15_143000_Image_abc12345_overlay.png").write_text("overlay")
+        sid = "9ce001ca-fa94-94c3-5514-8b5c7c118fb6"
+        (overlays_dir / f"2023-01-15_143000_Image_{sid}_overlay.png").write_text("overlay")
 
         pairs = find_overlay_pairs(output_dir, use_cache=False)
 
@@ -90,15 +93,16 @@ class TestFindOverlayPairs:
         overlays_dir.mkdir(parents=True)
 
         # Base file with local timezone
-        (images_dir / "2023-01-15_093000_Image_abc12345.jpg").write_text("image")
+        sid = "9ce001ca-fa94-94c3-5514-8b5c7c118fb6"
+        (images_dir / f"2023-01-15_093000_Image_{sid}.jpg").write_text("image")
         # Overlay with UTC timezone
-        (overlays_dir / "2023-01-15_143000_Image_abc12345_overlay.png").write_text("overlay")
+        (overlays_dir / f"2023-01-15_143000_Image_{sid}_overlay.png").write_text("overlay")
 
         pairs = find_overlay_pairs(output_dir, use_cache=False)
 
         # Should find pair despite different timestamps (same SID)
         assert len(pairs) == 1
-        assert pairs[0]['sid'] == 'abc12345'
+        assert pairs[0]['sid'] == sid
 
     def test_find_pairs_cache_save_and_load(self, tmp_path):
         """Test that cache is saved and loaded correctly."""
@@ -110,8 +114,9 @@ class TestFindOverlayPairs:
         images_dir.mkdir(parents=True)
         overlays_dir.mkdir(parents=True)
 
-        (images_dir / "2023-01-15_143000_Image_abc12345.jpg").write_text("image")
-        (overlays_dir / "2023-01-15_143000_Image_abc12345_overlay.png").write_text("overlay")
+        sid = "9ce001ca-fa94-94c3-5514-8b5c7c118fb6"
+        (images_dir / f"2023-01-15_143000_Image_{sid}.jpg").write_text("image")
+        (overlays_dir / f"2023-01-15_143000_Image_{sid}_overlay.png").write_text("overlay")
 
         # First call - should build and save cache
         pairs1 = find_overlay_pairs(output_dir, pairs_cache_file=cache_file, use_cache=False)
@@ -133,8 +138,9 @@ class TestFindOverlayPairs:
         images_dir.mkdir(parents=True)
         overlays_dir.mkdir(parents=True)
 
-        (images_dir / "2023-01-15_143000_Image_abc12345.jpg").write_text("image")
-        (overlays_dir / "2023-01-15_143000_Image_abc12345_overlay.png").write_text("overlay")
+        sid = "9ce001ca-fa94-94c3-5514-8b5c7c118fb6"
+        (images_dir / f"2023-01-15_143000_Image_{sid}.jpg").write_text("image")
+        (overlays_dir / f"2023-01-15_143000_Image_{sid}_overlay.png").write_text("overlay")
 
         # Create corrupted cache
         Path(cache_file).write_text("{ invalid json")
@@ -153,9 +159,10 @@ class TestFindOverlayPairs:
         overlays_dir.mkdir(parents=True)
 
         # Create files with invalid formats
+        sid = "9ce001ca-fa94-94c3-5514-8b5c7c118fb6"
         (overlays_dir / "invalid_overlay.png").write_text("overlay")
         (overlays_dir / "2023-01-15_overlay.png").write_text("overlay")
-        (overlays_dir / "no_type_abc12345_overlay.png").write_text("overlay")
+        (overlays_dir / f"no_type_{sid}_overlay.png").write_text("overlay")
 
         pairs = find_overlay_pairs(output_dir, use_cache=False)
 

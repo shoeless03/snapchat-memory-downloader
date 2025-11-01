@@ -310,7 +310,8 @@ class TestUpdateExistingFileMetadata:
         images_dir.mkdir(parents=True)
 
         # Create test file
-        test_file = images_dir / "2023-01-15_143000_Image_abc12345.jpg"
+        sid = '9ce001ca-fa94-94c3-5514-8b5c7c118fb6'
+        test_file = images_dir / f"2023-01-15_143000_Image_{sid}.jpg"
         test_file.write_text("test")
 
         memory = {
@@ -319,7 +320,7 @@ class TestUpdateExistingFileMetadata:
         }
 
         update_existing_file_metadata(
-            output_dir, memory, 'abc12345xyz',
+            output_dir, memory, sid,
             has_exiftool=False, has_pywin32=False
         )
 
@@ -335,13 +336,14 @@ class TestUpdateExistingFileMetadata:
         videos_dir = output_dir / "videos"
         videos_dir.mkdir(parents=True)
 
-        test_file = videos_dir / "2023-01-15_143000_Video_abc12345.mp4"
+        sid = '5b617512-1234-5678-9abc-def012345678'
+        test_file = videos_dir / f"2023-01-15_143000_Video_{sid}.mp4"
         test_file.write_text("test")
 
         memory = {'date': '2023-01-15 14:30:00 UTC'}
 
         update_existing_file_metadata(
-            output_dir, memory, 'abc12345xyz',
+            output_dir, memory, sid,
             has_exiftool=False, has_pywin32=False
         )
 
@@ -356,13 +358,14 @@ class TestUpdateExistingFileMetadata:
         overlays_dir = output_dir / "overlays"
         overlays_dir.mkdir(parents=True)
 
-        test_file = overlays_dir / "2023-01-15_143000_Image_abc12345_overlay.png"
+        sid = '9ce001ca-fa94-94c3-5514-8b5c7c118fb6'
+        test_file = overlays_dir / f"2023-01-15_143000_Image_{sid}_overlay.png"
         test_file.write_text("test")
 
         memory = {'date': '2023-01-15 14:30:00 UTC'}
 
         update_existing_file_metadata(
-            output_dir, memory, 'abc12345xyz',
+            output_dir, memory, sid,
             has_exiftool=False, has_pywin32=False
         )
 
@@ -391,7 +394,8 @@ class TestUpdateExistingFileMetadata:
         images_dir = output_dir / "images"
         images_dir.mkdir(parents=True)
 
-        test_file = images_dir / "2023-01-15_143000_Image_abc12345.jpg"
+        sid = '9ce001ca-fa94-94c3-5514-8b5c7c118fb6'
+        test_file = images_dir / f"2023-01-15_143000_Image_{sid}.jpg"
         test_file.write_text("test")
 
         # Make file read-only to cause error
@@ -402,7 +406,7 @@ class TestUpdateExistingFileMetadata:
         # Should not raise exception
         try:
             update_existing_file_metadata(
-                output_dir, memory, 'abc12345xyz',
+                output_dir, memory, sid,
                 has_exiftool=False, has_pywin32=False
             )
         finally:

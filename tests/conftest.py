@@ -36,19 +36,19 @@ def sample_html_file(tmp_path):
                     <td>2023-01-15 14:30:00 UTC</td>
                     <td>Image</td>
                     <td>Latitude, Longitude: 42.438072, -82.91975</td>
-                    <td><a onclick="downloadMemories('https://example.com/download?sid=abc12345def67890', this, true)">Download</a></td>
+                    <td><a onclick="downloadMemories('https://example.com/download?sid=9ce001ca-fa94-94c3-5514-8b5c7c118fb6', this, true)">Download</a></td>
                 </tr>
                 <tr>
                     <td>2023-01-16 10:20:00 UTC</td>
                     <td>Video</td>
                     <td></td>
-                    <td><a onclick="downloadMemories('https://example.com/download?sid=xyz98765fed43210', this, false)">Download</a></td>
+                    <td><a onclick="downloadMemories('https://example.com/download?sid=5b617512-1234-5678-9abc-def012345678', this, false)">Download</a></td>
                 </tr>
                 <tr>
                     <td>2023-01-17 16:00:00 UTC</td>
                     <td>Image</td>
                     <td>Latitude, Longitude: 40.7128, -74.0060</td>
-                    <td><a onclick="downloadMemories('https://example.com/download?sid=test123test456', this, true)">Download</a></td>
+                    <td><a onclick="downloadMemories('https://example.com/download?sid=a1b2c3d4-5e6f-7890-abcd-ef1234567890', this, true)">Download</a></td>
                 </tr>
             </tbody>
         </table>
@@ -69,22 +69,22 @@ def sample_memories():
             'date': '2023-01-15 14:30:00 UTC',
             'media_type': 'Image',
             'location': 'Latitude, Longitude: 42.438072, -82.91975',
-            'download_url': 'https://example.com/download?sid=abc12345def67890',
-            'sid': 'abc12345def67890'
+            'download_url': 'https://example.com/download?sid=9ce001ca-fa94-94c3-5514-8b5c7c118fb6',
+            'sid': '9ce001ca-fa94-94c3-5514-8b5c7c118fb6'
         },
         {
             'date': '2023-01-16 10:20:00 UTC',
             'media_type': 'Video',
             'location': '',
-            'download_url': 'https://example.com/download?sid=xyz98765fed43210',
-            'sid': 'xyz98765fed43210'
+            'download_url': 'https://example.com/download?sid=5b617512-1234-5678-9abc-def012345678',
+            'sid': '5b617512-1234-5678-9abc-def012345678'
         },
         {
             'date': '2023-01-17 16:00:00 UTC',
             'media_type': 'Image',
             'location': 'Latitude, Longitude: 40.7128, -74.0060',
-            'download_url': 'https://example.com/download?sid=test123test456',
-            'sid': 'test123test456'
+            'download_url': 'https://example.com/download?sid=a1b2c3d4-5e6f-7890-abcd-ef1234567890',
+            'sid': 'a1b2c3d4-5e6f-7890-abcd-ef1234567890'
         }
     ]
 
@@ -119,15 +119,16 @@ def progress_file(tmp_path):
 @pytest.fixture
 def sample_image_pair(tmp_path):
     """Create sample image and overlay files for testing."""
-    base_file = tmp_path / "2023-01-15_143000_Image_abc12345.jpg"
-    overlay_file = tmp_path / "2023-01-15_143000_Image_abc12345_overlay.png"
+    sid = '9ce001ca-fa94-94c3-5514-8b5c7c118fb6'
+    base_file = tmp_path / f"2023-01-15_143000_Image_{sid}.jpg"
+    overlay_file = tmp_path / f"2023-01-15_143000_Image_{sid}_overlay.png"
 
     # Create minimal valid image files
     # These are fake but have correct magic bytes
     base_file.write_bytes(b'\xff\xd8\xff\xe0' + b'\x00' * 100)  # JPEG magic bytes
     overlay_file.write_bytes(b'\x89PNG\r\n\x1a\n' + b'\x00' * 100)  # PNG magic bytes
 
-    return {'base': base_file, 'overlay': overlay_file, 'sid': 'abc12345'}
+    return {'base': base_file, 'overlay': overlay_file, 'sid': sid}
 
 
 @pytest.fixture
@@ -148,12 +149,13 @@ def sample_video_pair(tmp_path):
 @pytest.fixture
 def mock_memory_with_location():
     """Provide a memory dict with GPS location."""
+    sid = '9ce001ca-fa94-94c3-5514-8b5c7c118fb6'
     return {
         'date': '2023-01-15 14:30:00 UTC',
         'media_type': 'Image',
         'location': 'Latitude, Longitude: 42.438072, -82.91975',
-        'download_url': 'https://example.com/download?sid=abc12345',
-        'sid': 'abc12345'
+        'download_url': f'https://example.com/download?sid={sid}',
+        'sid': sid
     }
 
 

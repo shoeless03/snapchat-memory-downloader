@@ -1,0 +1,19 @@
+{
+  "download_errors": [
+    {
+      "timestamp": "2025-10-31T22:23:30.089054",
+      "operation": "download",
+      "sid": "485c9920-2408-dafd-6423-d32ad27eecb6",
+      "url": "https://us-east1-aws.api.snapchat.com/dmd/mm?uid=78c79a63-abd1-4892-bf89-bc5385e21d8b&sid=485c9920-2408-dafd-6423-d32ad27eecb6&mid=fdf06add-c7b0-4fcb-ae31-28943d0f40eb&ts=1761494168586&sig=935362d7dfc75d3eebf28c431a5c137e370b11e0405a1bd0bef80f5ebcb964cc",
+      "error_message": "500 Server Error: Internal Server Error for url: https://us-east1-aws.api.snapchat.com/dmd/mm?uid=78c79a63-abd1-4892-bf89-bc5385e21d8b&sid=485c9920-2408-dafd-6423-d32ad27eecb6&mid=fdf06add-c7b0-4fcb-ae31-28943d0f40eb&ts=1761494168586&sig=935362d7dfc75d3eebf28c431a5c137e370b11e0405a1bd0bef80f5ebcb964cc",
+      "error_type": "HTTPError",
+      "error_details": "500 Server Error: Internal Server Error for url: https://us-east1-aws.api.snapchat.com/dmd/mm?uid=78c79a63-abd1-4892-bf89-bc5385e21d8b&sid=485c9920-2408-dafd-6423-d32ad27eecb6&mid=fdf06add-c7b0-4fcb-ae31-28943d0f40eb&ts=1761494168586&sig=935362d7dfc75d3eebf28c431a5c137e370b11e0405a1bd0bef80f5ebcb964cc",
+      "additional_context": {
+        "media_type": "Video",
+        "date": "2025-10-15 14:37:45 UTC"
+      }
+    }
+  ],
+  "composite_errors": [],
+  "other_errors": []
+}

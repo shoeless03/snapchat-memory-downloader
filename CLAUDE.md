@@ -30,8 +30,8 @@ A Python script (`download_snapchat_memories.py`) that:
    - Handles both formats:
      - **ZIP files**: Extracts main media file (JPG/MP4) and overlay (PNG)
      - **Direct media**: Detects video/image files using magic bytes and saves directly
-   - Renames files with format: `YYYY-MM-DD_HHMMSS_Type_sidXXXXXXXX.ext`
-     - Example: `2025-10-16_194703_Image_9ce001ca.jpg`
+   - Renames files with format: `YYYY-MM-DD_HHMMSS_Type_sid.ext`
+     - Example: `2025-10-16_194703_Image_9ce001ca-fa94-94c3-5514-8b5c7c118fb6.jpg`
      - More human-readable with dashes in date and capitalized type
    - Organizes into folders: `images/`, `videos/`, `overlays/`
    - Sets file timestamps to match Snapchat creation dates:
@@ -92,16 +92,16 @@ snap2/
 │       └── faq.html
 ├── memories/                         # Output directory
 │   ├── images/                      # Downloaded images
-│   │   └── YYYY-MM-DD_HHMMSS_Type_sidXXXXXXXX.jpg
+│   │   └── YYYY-MM-DD_HHMMSS_Type_sid.jpg
 │   ├── videos/                      # Downloaded videos
-│   │   └── YYYY-MM-DD_HHMMSS_Type_sidXXXXXXXX.mp4
+│   │   └── YYYY-MM-DD_HHMMSS_Type_sid.mp4
 │   ├── overlays/                    # Snapchat overlays/stickers
-│   │   └── YYYY-MM-DD_HHMMSS_Type_sidXXXXXXXX_overlay.png
+│   │   └── YYYY-MM-DD_HHMMSS_Type_sid_overlay.png
 │   └── composited/                  # Overlays applied to images/videos
 │       ├── images/                  # Images with overlays
-│       │   └── YYYY-MM-DD_HHMMSS_Type_sidXXXXXXXX_composited.jpg
+│       │   └── YYYY-MM-DD_HHMMSS_Type_sid_composited.jpg
 │       └── videos/                  # Videos with overlays
-│           └── YYYY-MM-DD_HHMMSS_Type_sidXXXXXXXX_composited.mp4
+│           └── YYYY-MM-DD_HHMMSS_Type_sid_composited.mp4
 ├── download_snapchat_memories.py    # Main download script
 ├── download_progress.json           # Progress tracking (auto-created)
 ├── overlay_pairs.json               # Cached overlay-to-media mappings
@@ -259,8 +259,8 @@ python download_snapchat_memories.py --html "path/to/memories_history.html" \
 ```
 [20:49:29] Compositing 430 images...
 [20:49:29] Metadata copying enabled (ExifTool detected, adds ~1.5s per image)
-[20:49:29] [1/430 0.2%] OK 2025-10-16_194703_Image_9ce001ca.jpg | 0.6 img/s | ETA: 715s
-[20:49:30] [2/430 0.5%] OK 2025-09-24_161956_Image_5b617512.jpg | 0.6 img/s | ETA: 713s
+[20:49:29] [1/430 0.2%] OK 2025-10-16_194703_Image_9ce001ca-fa94-94c3-5514-8b5c7c118fb6.jpg | 0.6 img/s | ETA: 715s
+[20:49:30] [2/430 0.5%] OK 2025-09-24_161956_Image_5b617512-1234-5678-9abc-def012345678.jpg | 0.6 img/s | ETA: 713s
 ...
 [20:59:44] Completed in 615.3s (1.43s per image)
 [20:59:44] Images: 430 composited, 0 failed, 0 skipped
@@ -270,8 +270,8 @@ python download_snapchat_memories.py --html "path/to/memories_history.html" \
 ```
 [20:49:29] Compositing 430 images...
 [20:49:29] Metadata copying disabled (ExifTool not found)
-[20:49:29] [1/430 0.2%] OK 2025-10-16_194703_Image_9ce001ca.jpg | 10.2 img/s | ETA: 42s
-[20:49:29] [2/430 0.5%] OK 2025-09-24_161956_Image_5b617512.jpg | 10.5 img/s | ETA: 41s
+[20:49:29] [1/430 0.2%] OK 2025-10-16_194703_Image_9ce001ca-fa94-94c3-5514-8b5c7c118fb6.jpg | 10.2 img/s | ETA: 42s
+[20:49:29] [2/430 0.5%] OK 2025-09-24_161956_Image_5b617512-1234-5678-9abc-def012345678.jpg | 10.5 img/s | ETA: 41s
 ...
 [20:50:11] Completed in 42.3s (0.10s per image)
 [20:50:11] Images: 430 composited, 0 failed, 0 skipped
@@ -301,8 +301,8 @@ python download_snapchat_memories.py --convert-timezone
 - All composited files in `memories/composited/images/` and `memories/composited/videos/`
 
 **Example:**
-- Before: `2025-10-16_194703_Image_9ce001ca.jpg` (UTC: 7:47 PM)
-- After: `2025-10-16_124703_Image_9ce001ca.jpg` (EST: 12:47 PM, assuming EST timezone)
+- Before: `2025-10-16_194703_Image_9ce001ca-fa94-94c3-5514-8b5c7c118fb6.jpg` (UTC: 7:47 PM)
+- After: `2025-10-16_124703_Image_9ce001ca-fa94-94c3-5514-8b5c7c118fb6.jpg` (EST: 12:47 PM, assuming EST timezone)
 
 **Progress tracking:**
 The `download_progress.json` file is updated to track:
@@ -317,22 +317,22 @@ The `download_progress.json` file is updated to track:
 
 ### File Naming Convention
 
-Files are named with the Snapchat creation timestamp and a short SID:
+Files are named with the Snapchat creation timestamp and the full session ID (GUID):
 
 ```
-YYYY-MM-DD_HHMMSS_Type_sidXXXXXXXX.ext
+YYYY-MM-DD_HHMMSS_Type_sid.ext
 ```
 
 **Format breakdown:**
 - `YYYY-MM-DD`: Date with dashes for readability
 - `HHMMSS`: Time (24-hour format, no colons to avoid filesystem issues)
 - `Type`: "Image" or "Video" (capitalized)
-- `sidXXXXXXXX`: First 8 characters of session ID (unique identifier)
+- `sid`: Full session ID / GUID (unique identifier)
 
 **Examples:**
-- `2025-10-16_194703_Image_9ce001ca.jpg` - Image taken Oct 16, 2025 at 19:47:03 UTC
-- `2025-10-15_223151_Video_9f9eb970.mp4` - Video taken Oct 15, 2025 at 22:31:51 UTC
-- `2025-10-16_194703_Image_9ce001ca_overlay.png` - Overlay/sticker for the image
+- `2025-10-16_194703_Image_9ce001ca-fa94-94c3-5514-8b5c7c118fb6.jpg` - Image taken Oct 16, 2025 at 19:47:03 UTC
+- `2025-10-15_223151_Video_9f9eb970-1234-5678-9abc-def012345678.mp4` - Video taken Oct 15, 2025 at 22:31:51 UTC
+- `2025-10-16_194703_Image_9ce001ca-fa94-94c3-5514-8b5c7c118fb6_overlay.png` - Overlay/sticker for the image
 
 ### Resume Capability
 

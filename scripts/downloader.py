@@ -97,7 +97,7 @@ class SnapchatDownloader:
             sid = memory['sid']
 
             if self.progress_tracker.is_downloaded(sid):
-                print(f"[{i}/{total}] Skipping {sid[:8]}... (already downloaded)")
+                print(f"[{i}/{total}] Skipping {sid} (already downloaded)")
                 skipped_count += 1
                 continue
 
@@ -365,12 +365,12 @@ class SnapchatDownloader:
         date_part = dt.strftime('%Y-%m-%d')
         time_part = dt.strftime('%H%M%S')
         media_type = memory['media_type'].capitalize()
-        sid_short = memory['sid'][:8]
+        sid = memory['sid']
 
         if is_overlay:
-            return f"{date_part}_{time_part}_{media_type}_{sid_short}_overlay.png"
+            return f"{date_part}_{time_part}_{media_type}_{sid}_overlay.png"
         else:
-            return f"{date_part}_{time_part}_{media_type}_{sid_short}.{extension}"
+            return f"{date_part}_{time_part}_{media_type}_{sid}.{extension}"
 
     def _print_download_summary(self, downloaded: int, failed: int, skipped: int, total: int):
         """Print download summary statistics.
@@ -771,27 +771,22 @@ class SnapchatDownloader:
                     total_files += 1
 
                     # Extract SID from filename
-                    sid_short = parse_filename_for_sid(file_path.name)
-                    if not sid_short:
+                    sid = parse_filename_for_sid(file_path.name)
+                    if not sid:
                         print(f"[{datetime.now().strftime('%H:%M:%S')}] WARNING: Could not parse SID from {file_path.name}")
                         failed_files += 1
                         continue
 
-                    # Find full SID in progress file (match first 8 chars)
+                    # Find SID in progress file
                     # For composited files, check both downloaded and composited sections
-                    full_sid = None
                     utc_date = None
                     is_composited_file = "_composited" in file_path.stem
 
-                    # First try to find in downloaded section
-                    for sid in self.progress_tracker.progress['downloaded'].keys():
-                        if sid.startswith(sid_short):
-                            full_sid = sid
-                            utc_date = self.progress_tracker.get_utc_date(full_sid)
-                            break
-
-                    if not full_sid:
-                        print(f"[{datetime.now().strftime('%H:%M:%S')}] WARNING: SID {sid_short} not found in progress file for {file_path.name}")
+                    # Check if SID exists in downloaded section
+                    if sid in self.progress_tracker.progress['downloaded']:
+                        utc_date = self.progress_tracker.get_utc_date(sid)
+                    else:
+                        print(f"[{datetime.now().strftime('%H:%M:%S')}] WARNING: SID {sid} not found in progress file for {file_path.name}")
                         failed_files += 1
                         continue
 
@@ -802,10 +797,10 @@ class SnapchatDownloader:
                         # Check composited section for timezone conversion tracking
                         media_type_key = 'images' if 'images' in str(folder) else 'videos'
                         composited_dict = self.progress_tracker.progress.get('composited', {}).get(media_type_key, {})
-                        if sid_short in composited_dict:
-                            already_converted = composited_dict[sid_short].get('timezone_converted', False)
+                        if sid in composited_dict:
+                            already_converted = composited_dict[sid].get('timezone_converted', False)
                     else:
-                        already_converted = self.progress_tracker.is_timezone_converted(full_sid)
+                        already_converted = self.progress_tracker.is_timezone_converted(sid)
 
                     if already_converted:
                         skipped_files += 1
@@ -813,12 +808,12 @@ class SnapchatDownloader:
 
                     # Get UTC date from progress file
                     if not utc_date:
-                        print(f"[{datetime.now().strftime('%H:%M:%S')}] WARNING: No UTC date found for SID {sid_short}")
+                        print(f"[{datetime.now().strftime('%H:%M:%S')}] WARNING: No UTC date found for SID {sid}")
                         failed_files += 1
                         continue
 
                     # Determine file type and suffix
-                    media_type = self.progress_tracker.progress['downloaded'][full_sid].get('media_type', 'Image')
+                    media_type = self.progress_tracker.progress['downloaded'][sid].get('media_type', 'Image')
                     suffix = ""
                     if "_overlay" in file_path.stem:
                         suffix = "_overlay"
@@ -828,7 +823,7 @@ class SnapchatDownloader:
                     # Generate new filename with local timezone
                     extension = file_path.suffix[1:]  # Remove the dot
                     new_filename = generate_local_filename(
-                        utc_date, media_type, sid_short, extension, suffix
+                        utc_date, media_type, sid, extension, suffix
                     )
                     new_path = file_path.parent / new_filename
 
@@ -842,12 +837,12 @@ class SnapchatDownloader:
                         if is_composited_file:
                             # Mark composited file as converted in its section
                             media_type_key = 'images' if 'images' in str(folder) else 'videos'
-                            if sid_short in self.progress_tracker.progress.get('composited', {}).get(media_type_key, {}):
-                                self.progress_tracker.progress['composited'][media_type_key][sid_short]['timezone_converted'] = True
-                                self.progress_tracker.progress['composited'][media_type_key][sid_short]['local_date'] = local_date_str
+                            if sid in self.progress_tracker.progress.get('composited', {}).get(media_type_key, {}):
+                                self.progress_tracker.progress['composited'][media_type_key][sid]['timezone_converted'] = True
+                                self.progress_tracker.progress['composited'][media_type_key][sid]['local_date'] = local_date_str
                                 self.progress_tracker.save_progress()
                         else:
-                            self.progress_tracker.mark_timezone_converted(full_sid, local_date_str)
+                            self.progress_tracker.mark_timezone_converted(sid, local_date_str)
 
                         converted_files += 1
                         continue
@@ -864,12 +859,12 @@ class SnapchatDownloader:
                         if is_composited_file:
                             # Mark composited file as converted in its section
                             media_type_key = 'images' if 'images' in str(folder) else 'videos'
-                            if sid_short in self.progress_tracker.progress.get('composited', {}).get(media_type_key, {}):
-                                self.progress_tracker.progress['composited'][media_type_key][sid_short]['timezone_converted'] = True
-                                self.progress_tracker.progress['composited'][media_type_key][sid_short]['local_date'] = local_date_str
+                            if sid in self.progress_tracker.progress.get('composited', {}).get(media_type_key, {}):
+                                self.progress_tracker.progress['composited'][media_type_key][sid]['timezone_converted'] = True
+                                self.progress_tracker.progress['composited'][media_type_key][sid]['local_date'] = local_date_str
                                 self.progress_tracker.save_progress()
                         else:
-                            self.progress_tracker.mark_timezone_converted(full_sid, local_date_str)
+                            self.progress_tracker.mark_timezone_converted(sid, local_date_str)
 
                         converted_files += 1
 

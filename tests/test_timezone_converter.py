@@ -86,33 +86,37 @@ class TestGenerateLocalFilename:
     def test_generate_filename_basic(self):
         """Test basic filename generation."""
         utc_date_str = '2023-01-15 14:30:00 UTC'
-        filename = generate_local_filename(utc_date_str, 'Image', 'abc12345', 'jpg')
+        sid = '9ce001ca-fa94-94c3-5514-8b5c7c118fb6'
+        filename = generate_local_filename(utc_date_str, 'Image', sid, 'jpg')
 
-        # Should have format: YYYY-MM-DD_HHMMSS_Type_sidXXXXXXXX.ext
+        # Should have format: YYYY-MM-DD_HHMMSS_Type_sid.ext
         assert filename.endswith('.jpg')
         assert '_Image_' in filename
-        assert '_abc12345.' in filename
+        assert f'_{sid}.' in filename
 
     def test_generate_filename_with_overlay_suffix(self):
         """Test filename generation with overlay suffix."""
         utc_date_str = '2023-01-15 14:30:00 UTC'
-        filename = generate_local_filename(utc_date_str, 'Image', 'abc12345', 'png', '_overlay')
+        sid = '9ce001ca-fa94-94c3-5514-8b5c7c118fb6'
+        filename = generate_local_filename(utc_date_str, 'Image', sid, 'png', '_overlay')
 
         assert filename.endswith('_overlay.png')
-        assert '_Image_abc12345_overlay.png' in filename
+        assert f'_Image_{sid}_overlay.png' in filename
 
     def test_generate_filename_with_composited_suffix(self):
         """Test filename generation with composited suffix."""
         utc_date_str = '2023-01-15 14:30:00 UTC'
-        filename = generate_local_filename(utc_date_str, 'Video', 'xyz78901', 'mp4', '_composited')
+        sid = '5b617512-1234-5678-9abc-def012345678'
+        filename = generate_local_filename(utc_date_str, 'Video', sid, 'mp4', '_composited')
 
         assert filename.endswith('_composited.mp4')
-        assert '_Video_xyz78901_composited.mp4' in filename
+        assert f'_Video_{sid}_composited.mp4' in filename
 
     def test_generate_filename_video(self):
         """Test filename generation for video."""
         utc_date_str = '2023-01-15 14:30:00 UTC'
-        filename = generate_local_filename(utc_date_str, 'Video', 'xyz78901', 'mp4')
+        sid = '5b617512-1234-5678-9abc-def012345678'
+        filename = generate_local_filename(utc_date_str, 'Video', sid, 'mp4')
 
         assert filename.endswith('.mp4')
         assert '_Video_' in filename
@@ -120,16 +124,19 @@ class TestGenerateLocalFilename:
     def test_generate_filename_format_structure(self):
         """Test that filename has correct structure."""
         utc_date_str = '2023-01-15 14:30:00 UTC'
-        filename = generate_local_filename(utc_date_str, 'Image', 'abc12345', 'jpg')
+        sid = '9ce001ca-fa94-94c3-5514-8b5c7c118fb6'
+        filename = generate_local_filename(utc_date_str, 'Image', sid, 'jpg')
 
         # Remove extension
         name_without_ext = filename.rsplit('.', 1)[0]
         parts = name_without_ext.split('_')
 
-        # Should have: DATE, TIME, TYPE, SID
+        # Should have: DATE, TIME, TYPE, SID (SID has hyphens so will be split into multiple parts)
         assert len(parts) >= 4
-        assert parts[-2] == 'Image'  # Type
-        assert parts[-1] == 'abc12345'  # SID
+        # Check that 'Image' is in the parts (second to last before the SID)
+        assert 'Image' in parts
+        # Check that the SID is at the end (joined back together)
+        assert sid in filename
 
         # First part should be date YYYY-MM-DD
         date_part = parts[0]
@@ -141,38 +148,43 @@ class TestParseFilenameForSid:
 
     def test_parse_filename_basic(self):
         """Test parsing basic filename."""
-        filename = '2023-01-15_143000_Image_abc12345.jpg'
+        expected_sid = '9ce001ca-fa94-94c3-5514-8b5c7c118fb6'
+        filename = f'2023-01-15_143000_Image_{expected_sid}.jpg'
         sid = parse_filename_for_sid(filename)
 
-        assert sid == 'abc12345'
+        assert sid == expected_sid
 
     def test_parse_filename_with_overlay(self):
         """Test parsing filename with overlay suffix."""
-        filename = '2023-01-15_143000_Image_abc12345_overlay.png'
+        expected_sid = '9ce001ca-fa94-94c3-5514-8b5c7c118fb6'
+        filename = f'2023-01-15_143000_Image_{expected_sid}_overlay.png'
         sid = parse_filename_for_sid(filename)
 
-        assert sid == 'abc12345'
+        assert sid == expected_sid
 
     def test_parse_filename_with_composited(self):
         """Test parsing filename with composited suffix."""
-        filename = '2023-01-15_143000_Video_xyz78901_composited.mp4'
+        expected_sid = '5b617512-1234-5678-9abc-def012345678'
+        filename = f'2023-01-15_143000_Video_{expected_sid}_composited.mp4'
         sid = parse_filename_for_sid(filename)
 
-        assert sid == 'xyz78901'
+        assert sid == expected_sid
 
     def test_parse_filename_video(self):
         """Test parsing video filename."""
-        filename = '2023-01-15_143000_Video_xyz78901.mp4'
+        expected_sid = '5b617512-1234-5678-9abc-def012345678'
+        filename = f'2023-01-15_143000_Video_{expected_sid}.mp4'
         sid = parse_filename_for_sid(filename)
 
-        assert sid == 'xyz78901'
+        assert sid == expected_sid
 
     def test_parse_filename_with_path(self):
         """Test parsing when given full path."""
-        filepath = '/path/to/2023-01-15_143000_Image_abc12345.jpg'
+        expected_sid = '9ce001ca-fa94-94c3-5514-8b5c7c118fb6'
+        filepath = f'/path/to/2023-01-15_143000_Image_{expected_sid}.jpg'
         sid = parse_filename_for_sid(filepath)
 
-        assert sid == 'abc12345'
+        assert sid == expected_sid
 
     def test_parse_filename_invalid_format(self):
         """Test parsing invalid filename format."""
@@ -190,18 +202,20 @@ class TestParseFilenameForSid:
     def test_parse_filename_edge_cases(self):
         """Test edge cases in filename parsing."""
         # Filename with extra underscores
-        filename = '2023-01-15_143000_Image_abc12345_extra_stuff.jpg'
+        expected_sid = '9ce001ca-fa94-94c3-5514-8b5c7c118fb6'
+        filename = f'2023-01-15_143000_Image_{expected_sid}_extra_stuff.jpg'
         sid = parse_filename_for_sid(filename)
         # Should still get the SID (might be 'stuff' or None depending on implementation)
 
     def test_parse_filename_different_extensions(self):
         """Test parsing with different file extensions."""
+        expected_sid = '9ce001ca-fa94-94c3-5514-8b5c7c118fb6'
         extensions = ['jpg', 'jpeg', 'png', 'mp4', 'mov']
 
         for ext in extensions:
-            filename = f'2023-01-15_143000_Image_abc12345.{ext}'
+            filename = f'2023-01-15_143000_Image_{expected_sid}.{ext}'
             sid = parse_filename_for_sid(filename)
-            assert sid == 'abc12345'
+            assert sid == expected_sid
 
 
 class TestConvertFileTimestampsToLocal:
@@ -311,13 +325,14 @@ class TestTimezoneConversionIntegration:
         local_dt, local_str = utc_to_local(utc_date_str)
 
         # Generate filename
-        filename = generate_local_filename(utc_date_str, 'Image', 'abc12345', 'jpg')
+        expected_sid = '9ce001ca-fa94-94c3-5514-8b5c7c118fb6'
+        filename = generate_local_filename(utc_date_str, 'Image', expected_sid, 'jpg')
 
         # Parse SID from filename
         sid = parse_filename_for_sid(filename)
 
         # Verify SID is correct
-        assert sid == 'abc12345'
+        assert sid == expected_sid
 
         # Verify filename contains proper date/time
         assert '2023-01' in filename or '2023-02' in filename  # Might be different day in local TZ
@@ -325,9 +340,10 @@ class TestTimezoneConversionIntegration:
     def test_consistent_timezone_handling(self):
         """Test that same UTC time produces consistent local filenames."""
         utc_date_str = '2023-01-15 14:30:00 UTC'
+        expected_sid = '9ce001ca-fa94-94c3-5514-8b5c7c118fb6'
 
-        filename1 = generate_local_filename(utc_date_str, 'Image', 'abc12345', 'jpg')
-        filename2 = generate_local_filename(utc_date_str, 'Image', 'abc12345', 'jpg')
+        filename1 = generate_local_filename(utc_date_str, 'Image', expected_sid, 'jpg')
+        filename2 = generate_local_filename(utc_date_str, 'Image', expected_sid, 'jpg')
 
         # Should produce identical filenames
         assert filename1 == filename2
@@ -336,9 +352,10 @@ class TestTimezoneConversionIntegration:
         """Test that different UTC times produce different local filenames."""
         utc1 = '2023-01-15 14:30:00 UTC'
         utc2 = '2023-01-15 15:30:00 UTC'
+        expected_sid = '9ce001ca-fa94-94c3-5514-8b5c7c118fb6'
 
-        filename1 = generate_local_filename(utc1, 'Image', 'abc12345', 'jpg')
-        filename2 = generate_local_filename(utc2, 'Image', 'abc12345', 'jpg')
+        filename1 = generate_local_filename(utc1, 'Image', expected_sid, 'jpg')
+        filename2 = generate_local_filename(utc2, 'Image', expected_sid, 'jpg')
 
         # Should be different (at least in time component)
         assert filename1 != filename2

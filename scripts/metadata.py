@@ -193,7 +193,7 @@ def update_existing_file_metadata(output_dir: Path, memory: Dict, sid: str, has_
     for subdir in ['images', 'videos', 'overlays']:
         dir_path = output_dir / subdir
         if dir_path.exists():
-            for file in dir_path.glob(f"*{sid[:8]}*"):
+            for file in dir_path.glob(f"*{sid}*"):
                 try:
                     set_file_timestamps(file, memory, has_pywin32)
                     add_gps_metadata(file, memory, has_exiftool)
