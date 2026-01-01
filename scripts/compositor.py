@@ -39,18 +39,43 @@ def find_overlay_pairs(output_dir: Path, pairs_cache_file: str = "overlay_pairs.
         - media_type: 'image' or 'video'
         - sid: Session ID
     """
+    # Scan overlay directory first to get stats for cache validation
+    overlay_dir = output_dir / "overlays"
+    if not overlay_dir.exists():
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] Overlays directory not found: {overlay_dir}")
+        return []
+
+    # Get directory stats for cache validation
+    try:
+        overlay_stats = overlay_dir.stat()
+        current_mtime = overlay_stats.st_mtime
+        # Fast way to get file count
+        current_count = len(list(overlay_dir.glob("*_overlay.png")))
+    except Exception:
+        current_mtime = 0
+        current_count = 0
+
     # Try to load from cache
     if use_cache and os.path.exists(pairs_cache_file):
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] Loading overlay pairs from cache...")
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] Checking overlay cache...")
         try:
             with open(pairs_cache_file, 'r') as f:
                 cached_data = json.load(f)
 
-            # Auto-rebuild if cache is empty (likely created before overlays were downloaded)
-            if cached_data.get('count', 0) == 0:
-                print(f"[{datetime.now().strftime('%H:%M:%S')}] Cache is empty, rebuilding from filesystem...")
-            else:
-                # Convert string paths back to Path objects
+            # Check if cache is stale
+            cache_mtime = cached_data.get('overlay_dir_mtime', 0)
+            cache_count = cached_data.get('overlay_dir_count', 0)
+            
+            is_stale = False
+            if current_count != cache_count:
+                print(f"[{datetime.now().strftime('%H:%M:%S')}] Cache invalid: Overlay file count changed ({cache_count} -> {current_count})")
+                is_stale = True
+            elif abs(current_mtime - cache_mtime) > 1.0: # 1 second tolerance
+                print(f"[{datetime.now().strftime('%H:%M:%S')}] Cache invalid: Overlays directory modified since last run")
+                is_stale = True
+            
+            if not is_stale and cached_data.get('count', 0) > 0:
+                # Cache is valid
                 pairs = []
                 for item in cached_data['pairs']:
                     pairs.append({
@@ -60,22 +85,17 @@ def find_overlay_pairs(output_dir: Path, pairs_cache_file: str = "overlay_pairs.
                         'sid': item['sid']
                     })
 
-                print(f"[{datetime.now().strftime('%H:%M:%S')}] Loaded {len(pairs)} pairs from cache (created {cached_data['created']})")
+                print(f"[{datetime.now().strftime('%H:%M:%S')}] Cache valid ({len(pairs)} pairs)")
                 return pairs
+                
         except Exception as e:
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] Cache load failed: {e}, rebuilding...")
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] Cache check failed: {e}, rebuilding...")
 
     # Build pairs from filesystem
     print(f"[{datetime.now().strftime('%H:%M:%S')}] Scanning filesystem for overlay pairs...")
     pairs = []
 
-    # Scan overlay directory
-    overlay_dir = output_dir / "overlays"
-    if not overlay_dir.exists():
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] Overlays directory not found: {overlay_dir}")
-        return pairs
-
-    # Count overlay files
+    # Get overlay files (we already counted them, but need the specific paths now)
     overlay_files = list(overlay_dir.glob("*_overlay.png"))
     print(f"[{datetime.now().strftime('%H:%M:%S')}] Found {len(overlay_files)} overlay files")
 
@@ -196,6 +216,8 @@ def find_overlay_pairs(output_dir: Path, pairs_cache_file: str = "overlay_pairs.
     cache_data = {
         'created': datetime.now().isoformat(),
         'count': len(pairs),
+        'overlay_dir_mtime': current_mtime,
+        'overlay_dir_count': current_count,
         'pairs': [
             {
                 'base_file': str(p['base_file']),

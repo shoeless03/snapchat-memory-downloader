@@ -15,7 +15,22 @@ from pathlib import Path
 scripts_dir = Path(__file__).parent / 'scripts'
 sys.path.insert(0, str(scripts_dir))
 
-from cli import main
+try:
+    from cli import main
+except ImportError as e:
+    print("\n" + "!"*60)
+    print("CRITICAL ERROR: Missing dependencies!")
+    print("!"*60)
+    print(f"\nError details: {e}")
+    print("\nIt looks like you're running this script without the required dependencies.")
+    print("Please make sure you have installed all dependencies:\n")
+    print("  pip install -r requirements.txt")
+    print("\nRunning into issues on Mac/Linux? Try using a virtual enviornment:\n")
+    print("  1. python3 -m venv venv")
+    print("  2. source venv/bin/activate")
+    print("  3. pip install -r requirements.txt")
+    print("\n" + "!"*60 + "\n")
+    sys.exit(1)
 
 
 if __name__ == '__main__':

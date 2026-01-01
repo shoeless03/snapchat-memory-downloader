@@ -5,6 +5,7 @@ Command-line interface for Snapchat Memories Downloader.
 
 import argparse
 import sys
+from pathlib import Path
 from snap_config import check_dependencies
 from downloader import SnapchatDownloader
 
@@ -204,6 +205,26 @@ def main():
     check_dependencies()
 
     # Create downloader instance (once, reused for all operations)
+    # Check if we need the HTML file for the selected operations
+    needs_html = not (args.apply_overlays or args.verify_composites) or args.verify or args.convert_timezone
+    
+    if needs_html:
+        html_path = Path(args.html)
+        if not html_path.exists():
+            print("\n" + "="*60)
+            print(f"ERROR: Could not find 'memories_history.html' at:")
+            print(f"       {html_path.absolute()}")
+            print("="*60)
+            print("Please ensure you have requested your data from Snapchat and extracted the zip file.")
+            print("Pass the path to the html file using the --html flag.")
+            print("\nDefault Usage:")
+            print("  1. Place 'memories_history.html' in: data from snapchat/html/memories_history.html")
+            print("  2. Run: python download_snapchat_memories.py")
+            print("\nCustom Usage:")
+            print("  python download_snapchat_memories.py --html /path/to/your/memories_history.html")
+            print("="*60 + "\n")
+            return
+
     downloader = SnapchatDownloader(args.html, args.output)
 
     # Interactive menu loop
