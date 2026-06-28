@@ -1,5 +1,5 @@
 June 2026:
-I'm no longer updating this atm. I think snapchat has altered how they serve they're backups at this point to make this tool out of date. But feel free to try/fork your own.
+I'm no longer updating this atm. I think snapchat has altered how they serve their backups at this point to make this tool out of date. But feel free to try/fork your own.
 
 
 
