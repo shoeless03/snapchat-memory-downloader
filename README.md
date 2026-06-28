@@ -1,3 +1,9 @@
+June 2026:
+I'm no longer updating this atm. I think snapchat has altered how they serve they're backups at this point to make this tool out of date. But feel free to try/fork your own.
+
+
+
+
 
 I am not a bot but the rest of this is. Created with that claude fucker.
 This assumes you've exported your data and they sent you something like my_data_blah blah folder (after extracting zip) with html in it.
